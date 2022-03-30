@@ -23,7 +23,7 @@ export class WalletModule implements NestModule {
     consumer
       .apply(AuthMiddleware)
       .exclude({
-        path: 'wallets/:public_key/dapps/:dapp/addresses',
+        path: '*/wallets/:public_key/dapps/:dapp/addresses',
         method: RequestMethod.GET,
       })
       .forRoutes(WalletController);

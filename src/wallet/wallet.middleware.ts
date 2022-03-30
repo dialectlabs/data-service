@@ -11,7 +11,7 @@ import { PublicKey } from '@solana/web3.js';
 import { NextFunction, Request, Response } from 'express';
 import nacl from 'tweetnacl';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { RequestScopedDApp, RequestScopedWallet } from './decorators';
+import { RequestScopedWallet } from './decorators';
 
 function base64ToUint8(string: string): Uint8Array {
   return new Uint8Array(
@@ -26,7 +26,7 @@ function base64ToUint8(string: string): Uint8Array {
 @Injectable()
 export class LoggerMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
-    console.log(new Date(), req.method, req.url, req.params);
+    console.warn(new Date(), req.method, req.url, req.params);
     next();
   }
 }
@@ -36,31 +36,6 @@ export class LoggerMiddleware implements NestMiddleware {
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
   constructor(private readonly prisma: PrismaService) {}
-
-  async use(req: RequestScopedWallet, res: Response, next: NextFunction) {
-    const singerPublicKey = AuthMiddleware.requireValidPublicKey(
-      req.params.public_key,
-    );
-    const authToken = req.headers['authorization'];
-    if (!authToken) {
-      throw new UnauthorizedException('fdsafas');
-    }
-    AuthMiddleware.checkTokenValid(authToken, singerPublicKey);
-    req.wallet = await this.upsertWallet(singerPublicKey);
-    next();
-  }
-
-  private upsertWallet(publicKey: PublicKey) {
-    return this.prisma.wallet.upsert({
-      where: {
-        publicKey: publicKey.toBase58(),
-      },
-      create: {
-        publicKey: publicKey.toBase58(),
-      },
-      update: {},
-    });
-  }
 
   private static requireValidPublicKey(publicKey: string) {
     try {
@@ -123,33 +98,29 @@ export class AuthMiddleware implements NestMiddleware {
       throw new UnauthorizedException('Signature verification failed');
     }
   }
-}
 
-@Injectable()
-export class DappMiddleware implements NestMiddleware {
-  constructor(private readonly prisma: PrismaService) {}
-
-  async use(req: RequestScopedDApp, res: Response, next: NextFunction) {
-    const dapp = req.params.dapp;
-    try {
-      new PublicKey(dapp);
-    } catch (e: any) {
-      throw new HttpException(
-        `Invalid format dapp public_key ${dapp}, please check your inputs and try again.`,
-        HttpStatus.BAD_REQUEST,
-      );
+  async use(req: RequestScopedWallet, res: Response, next: NextFunction) {
+    const singerPublicKey = AuthMiddleware.requireValidPublicKey(
+      req.params.public_key,
+    );
+    const authToken = req.headers['authorization'];
+    if (!authToken) {
+      throw new UnauthorizedException('fdsafas');
     }
-    const dapp_: Dapp | null = await this.prisma.dapp.findUnique({
-      where: {
-        publicKey: dapp,
-      },
-    });
-    if (!dapp_)
-      throw new HttpException(
-        `Unrecognized dapp '${dapp}'. Please provide a valid dapp and try again`,
-        HttpStatus.BAD_REQUEST,
-      );
-    req.dapp = dapp_;
+    AuthMiddleware.checkTokenValid(authToken, singerPublicKey);
+    req.wallet = await this.upsertWallet(singerPublicKey);
     next();
+  }
+
+  private upsertWallet(publicKey: PublicKey) {
+    return this.prisma.wallet.upsert({
+      where: {
+        publicKey: publicKey.toBase58(),
+      },
+      create: {
+        publicKey: publicKey.toBase58(),
+      },
+      update: {},
+    });
   }
 }

@@ -47,7 +47,7 @@ async function seedDev() {
     },
     update: {},
   });
-  
+
   return;
 }
 
