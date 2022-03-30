@@ -11,7 +11,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
 
   const config = new DocumentBuilder()
-    .setTitle('Monitoring service')
+    .setTitle('Wallet address registry service')
     .setDescription('Monitoring service API description')
     .setVersion('0.1')
     .build();

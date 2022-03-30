@@ -35,38 +35,11 @@ docker compose up -d
 ./prisma/migrate-db-dev-local.sh
 ```
 
-#### Run a solana validator node with dialect program
-
-Please follow the instructions in https://github.com/dialectlabs/protocol#local-development
-
-### Running locally
-
-#### Step 1. Generate a new keypair for monitoring service and fund it
-
-```bash
-export your_path=~/projects/dialect
-solana-keygen new --outfile ${your_path}/monitoring-service-dev-local-key.json
-solana-keygen pubkey ${your_path}/monitoring-service-dev-local-key.json > ${your_path}/monitoring-service-dev-local-key.pub
-solana -k ${your_path}/monitoring-service-dev-local-key.json airdrop 5
-```
-
-#### Step 2. Start server
+#### Run service
 
 ```shell
-export your_path=~/projects/dialect
-PRIVATE_KEY=$(cat ${your_path}/monitoring-service-dev-local-key.json) yarn start:dev
+yarn start:dev
 ```
-
-#### Step 3. Start client
-
-```shell
-export your_path=~/projects/dialect
-MONITORING_SERVICE_PUBLIC_KEY=$(cat ${your_path}/monitoring-service-dev-local-key.pub) ts-node test/dialect-clients.ts
-```
-
-#### Step 4. Look at client logs for notifications
-
-When both client and server are started, server will send notifications to clients
 
 ### Containerization
 
@@ -75,13 +48,6 @@ When both client and server are started, server will send notifications to clien
 ```shell
 brew install jq
 ./docker-build.sh
-```
-
-#### Run container locally
-
-```shell
-export your_path=~/projects/dialect
-docker run --name dialectlabs_monitoring-service -e PRIVATE_KEY=$(cat ${your_path}/monitoring-service-dev-local-key.json) dialectlab/monitoring-service:latest 
 ```
 
 #### Publish image
