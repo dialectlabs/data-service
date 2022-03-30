@@ -1,12 +1,12 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { Request } from 'express';
-import { Wallet as WalletDb } from '@prisma/client';
-
-export type RequestScopedWallet = Request & { wallet: WalletDb };
+import { Wallet } from '@prisma/client';
 
 export const InjectWallet = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest<RequestScopedWallet>();
+    const request = ctx
+      .switchToHttp()
+      .getRequest<Request & { wallet: Wallet }>();
     return request.wallet;
   },
 );

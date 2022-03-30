@@ -1,17 +1,15 @@
 import {
   BadRequestException,
-  HttpException,
-  HttpStatus,
+  CanActivate,
+  ExecutionContext,
   Injectable,
-  NestMiddleware,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Dapp } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
 import { PublicKey } from '@solana/web3.js';
-import { NextFunction, Request, Response } from 'express';
 import nacl from 'tweetnacl';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { RequestScopedWallet } from './decorators';
+import { Request } from 'express';
+import { Wallet } from '@prisma/client';
 
 function base64ToUint8(string: string): Uint8Array {
   return new Uint8Array(
@@ -24,18 +22,27 @@ function base64ToUint8(string: string): Uint8Array {
 }
 
 @Injectable()
-export class LoggerMiddleware implements NestMiddleware {
-  use(req: Request, res: Response, next: NextFunction) {
-    console.warn(new Date(), req.method, req.url, req.params);
-    next();
-  }
-}
-
-// TODO: Consider using https://docs.nestjs.com/guards
-
-@Injectable()
-export class AuthMiddleware implements NestMiddleware {
+export class AuthGuard implements CanActivate {
   constructor(private readonly prisma: PrismaService) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context
+      .switchToHttp()
+      .getRequest<Request & { wallet: Wallet }>();
+
+    const singerPublicKey = AuthGuard.requireValidPublicKey(
+      request.params.public_key,
+    );
+    const authToken = request.headers['authorization'];
+    if (!authToken) {
+      throw new UnauthorizedException();
+    }
+    AuthGuard.checkTokenValid(authToken, singerPublicKey);
+    request.wallet = await this.upsertWallet(singerPublicKey);
+    return true;
+  }
+
+  // TODO: Consider using https://docs.nestjs.com/guards
 
   private static requireValidPublicKey(publicKey: string) {
     try {
@@ -97,19 +104,6 @@ export class AuthMiddleware implements NestMiddleware {
     } catch (e: any) {
       throw new UnauthorizedException('Signature verification failed');
     }
-  }
-
-  async use(req: RequestScopedWallet, res: Response, next: NextFunction) {
-    const singerPublicKey = AuthMiddleware.requireValidPublicKey(
-      req.params.public_key,
-    );
-    const authToken = req.headers['authorization'];
-    if (!authToken) {
-      throw new UnauthorizedException('fdsafas');
-    }
-    AuthMiddleware.checkTokenValid(authToken, singerPublicKey);
-    req.wallet = await this.upsertWallet(singerPublicKey);
-    next();
   }
 
   private upsertWallet(publicKey: PublicKey) {

@@ -10,6 +10,7 @@ import {
   Param,
   Post,
   Put,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { PrismaService } from '../prisma/prisma.service';
@@ -18,14 +19,15 @@ import {
   PostDappAddressDto,
   PutDappAddressDto,
 } from './wallet.controller.dto';
-import { InjectWallet } from './decorators';
-import { Dapp, Wallet } from '@prisma/client';
+import { Wallet } from '@prisma/client';
 import { DappService } from '../dapp/dapp.service';
+import { AuthGuard } from '../auth/auth.guard';
+import { InjectWallet } from '../auth/auth.decorator';
 
 @ApiTags('Wallets')
 @Controller({
   path: 'wallets',
-  version: '1',
+  version: '0',
 })
 export class WalletController {
   constructor(
@@ -37,6 +39,7 @@ export class WalletController {
      Addresses
      Delete an address. N.b. this will delete all corresponding dapp address configurations.
      */
+  @UseGuards(AuthGuard)
   @Delete(':public_key/addresses/:id')
   async delete(
     @Param('public_key') publicKey: string,
@@ -118,6 +121,7 @@ export class WalletController {
 
      In all of the above, the dapp address is being created, hence the POST method type.
      */
+  @UseGuards(AuthGuard)
   @Post(':public_key/dapps/:dapp/addresses')
   async post(
     @Param('public_key') publicKey: string,
@@ -134,10 +138,10 @@ export class WalletController {
     let address;
     if (!addressId && type && value) {
       /*
-                                                Case 1: Create an address
-                                          
-                                                This is determined by there being no addressId in the payload.
-                                                */
+                                                            Case 1: Create an address
+                                                      
+                                                            This is determined by there being no addressId in the payload.
+                                                            */
       console.log('POST case 1: Creating an address...');
       try {
         address = await this.prisma.address.create({
@@ -161,9 +165,9 @@ export class WalletController {
       }
     } else if (value) {
       /**
-       Case 2: Address exists and must be updated.
-       This is determined by there being an addressId and a value supplied.
-       */
+             Case 2: Address exists and must be updated.
+             This is determined by there being an addressId and a value supplied.
+             */
       // TODO: Ensure this can't be done by non-owner.
       console.log('POST case 2: Updating an address...');
       await this.prisma.address.updateMany({
@@ -187,8 +191,8 @@ export class WalletController {
         );
     } else {
       /*
-                                                      Case 3: Address does not need to be created or updated.
-                                                      */
+                                                                  Case 3: Address does not need to be created or updated.
+                                                                  */
       console.log('POST case 3: No address create or update...');
       const addresses = await this.prisma.address.findMany({
         where: {
@@ -241,13 +245,14 @@ export class WalletController {
   }
 
   /**
-   Update a dapp address. N.b. this also handles the following cases for addresses:
+     Update a dapp address. N.b. this also handles the following cases for addresses:
 
-   1. Update an address.
-   2. Don't update an address.
+     1. Update an address.
+     2. Don't update an address.
 
-   In all of the above, the dapp address is being created, hence the POST method type.
-   */
+     In all of the above, the dapp address is being created, hence the POST method type.
+     */
+  @UseGuards(AuthGuard)
   @Put(':public_key/dapps/:dapp/addresses/:id')
   async put(
     @Param('id') id: string,
@@ -273,10 +278,10 @@ export class WalletController {
     let address;
     if (addressId && value) {
       /*
-                                                      Case 1: Address must be updated.
-                                                
-                                                      This is determined by addressId & value being supplied.
-                                                      */
+                                                                  Case 1: Address must be updated.
+                                                            
+                                                                  This is determined by addressId & value being supplied.
+                                                                  */
       await this.prisma.address.updateMany({
         where: {
           id: addressId,
@@ -298,8 +303,8 @@ export class WalletController {
         );
     } else {
       /*
-                                                      Case 2: Address does not need to be updated.
-                                                      */
+                                                                  Case 2: Address does not need to be updated.
+                                                                  */
       const addresses = await this.prisma.address.findMany({
         where: {
           id: addressId,

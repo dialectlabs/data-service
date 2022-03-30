@@ -5,7 +5,8 @@ import { DappService } from './dapp.service';
 
 @Module({
   imports: [PrismaModule],
+  providers: [DappService],
   exports: [DappService],
   controllers: [],
 })
-export class WalletModule {}
+export class DappModule {}
