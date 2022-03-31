@@ -12,7 +12,7 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   DappAddressDto,
@@ -40,6 +40,7 @@ export class WalletController {
      Delete an address. N.b. this will delete all corresponding dapp address configurations.
      */
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
   @Delete(':public_key/addresses/:id')
   async delete(
     @Param('public_key') publicKey: string,
@@ -122,6 +123,7 @@ export class WalletController {
      In all of the above, the dapp address is being created, hence the POST method type.
      */
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
   @Post(':public_key/dapps/:dapp/addresses')
   async post(
     @Param('public_key') publicKey: string,
@@ -253,6 +255,7 @@ export class WalletController {
      In all of the above, the dapp address is being created, hence the POST method type.
      */
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
   @Put(':public_key/dapps/:dapp/addresses/:id')
   async put(
     @Param('id') id: string,
