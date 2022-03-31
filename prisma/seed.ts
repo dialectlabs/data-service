@@ -35,13 +35,24 @@ async function seedDev() {
     },
     update: {},
   });
+
+  const dialectDevnet = await prisma.dapp.upsert({
+    where: {
+      id: 'e191eb46-3fa2-483f-abb7-24645b634666',
+    },
+    create: {
+      id: 'e191eb46-3fa2-483f-abb7-24645b634666',
+      publicKey: 'D2pyBevYb6dit1oCx6e8vCxFK9mBeYCRe8TTntk2Tm98',
+    },
+    update: {},
+  });
   const dappAddress = await prisma.dappAddress.upsert({
     where: {
       id: '44a34c33-9938-49f3-935c-dcbf35d1b5a4',
     },
     create: {
       id: '44a34c33-9938-49f3-935c-dcbf35d1b5a4',
-      dappId: dapp.id,
+      dappId: dialectDevnet.id,
       addressId: address.id,
       enabled: true,
     },
