@@ -1,0 +1,1 @@
+dotenv -e ../.env.prod -- yarn prisma migrate deploy
