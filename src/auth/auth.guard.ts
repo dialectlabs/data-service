@@ -20,6 +20,7 @@ function base64ToUint8(string: string): Uint8Array {
       }),
   );
 }
+const bearerHeader = 'Bearer ';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -30,19 +31,22 @@ export class AuthGuard implements CanActivate {
       .switchToHttp()
       .getRequest<Request & { wallet: Wallet }>();
 
+    const authHeader = request.headers.authorization;
+    if (!authHeader) {
+      throw new UnauthorizedException('No Authorization header');
+    }
+    if (!authHeader.startsWith(bearerHeader)) {
+      throw new UnauthorizedException('Invalid authorization token');
+    }
+
     const singerPublicKey = AuthGuard.requireValidPublicKey(
       request.params.public_key,
     );
-    const authToken = request.headers['authorization'];
-    if (!authToken) {
-      throw new UnauthorizedException();
-    }
+    const authToken = authHeader.slice(bearerHeader.length).trim();
     AuthGuard.checkTokenValid(authToken, singerPublicKey);
     request.wallet = await this.upsertWallet(singerPublicKey);
     return true;
   }
-
-  // TODO: Consider using https://docs.nestjs.com/guards
 
   private static requireValidPublicKey(publicKey: string) {
     try {
