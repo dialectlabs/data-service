@@ -1,7 +1,4 @@
-# Monitoring service
-
-A reference implementation of a service running `@dialectlabs/monitor`.
-See https://github.com/dialectlabs/monitor for details on the notifications module.
+# Wallet-address-registry-service service
 
 ## Development
 
