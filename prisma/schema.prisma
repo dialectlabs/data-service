@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Wallet {
+  // generic columns
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // columns
+  publicKey String @unique @map("public_key")
+
+  // relations
+  addresses Address[]
+
+  // meta
+  @@map("wallets")
+}
+
+model Address {
+  // generic columns
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // columns
+  type     String // e.g. 'email', 'telegram', 'sms', etc. TODO: Make this an enum, perhaps only at the server level, not db
+  value    String // e.g. 'chris@dialect.to', '@chrisoss', etc.
+  verified Boolean @default(false)
+
+  // relations
+  walletId      String        @map("wallet_id") @db.Uuid
+  wallet        Wallet        @relation(fields: [walletId], references: [id])
+  dappAddresses DappAddress[]
+
+  // constraints
+
+  // meta
+  @@unique([walletId, type])
+  @@map("addresses")
+}
+
+model Dapp {
+  // generic columns
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // columns
+  publicKey String @unique @map("public_key")
+
+  // relations
+  dappAddresses DappAddress[]
+
+  // meta
+  @@map("dapps")
+}
+
+model DappAddress {
+  // generic columns
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // columns
+  enabled Boolean
+
+  // relations
+  addressId String  @map("address_id") @db.Uuid
+  address   Address @relation(fields: [addressId], references: [id])
+  dappId    String  @map("dapp_id") @db.Uuid
+  dapp      Dapp    @relation(fields: [dappId], references: [id])
+
+  // constraints
+
+  // meta
+  @@unique([addressId, dappId])
+  @@map("dapp_addresses")
+}
