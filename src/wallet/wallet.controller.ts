@@ -18,6 +18,7 @@ import {
   DappAddressDto,
   PostDappAddressDto,
   PutDappAddressDto,
+  VerifyAddressDto,
 } from './wallet.controller.dto';
 import { Wallet } from '@prisma/client';
 import { DappService } from '../dapp/dapp.service';
@@ -145,14 +146,23 @@ export class WalletController {
                                                             This is determined by there being no addressId in the payload.
                                                             */
       console.log('POST case 1: Creating an address...');
+      /**
+       * Generating 6 digit code to approve email
+      */
+
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+
       try {
         address = await this.prisma.address.create({
           data: {
             type,
             value,
             walletId: wallet.id,
-          },
+            verficiationCode: code
+          }
         });
+
+        console.log(address);
       } catch (e: any) {
         console.log('e', e);
         if (e?.message?.includes('Unique constraint failed'))
@@ -361,5 +371,70 @@ export class WalletController {
       dapp: dappAddress.dapp.publicKey,
       enabled: dappAddress.enabled,
     };
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @Post(':public_key/dapps/:dapp/addresses/:id/verify')
+  async verify(
+    @Param('id') id: string,
+    @Param('public_key') publicKey: string,
+    @Param('dapp') dappPublicKey: string,
+    @InjectWallet() wallet: Wallet,
+    @Body() verifyAddressDto: VerifyAddressDto,
+  ): Promise<any> {
+    await this.dappService.lookupDapp(dappPublicKey);
+
+    try {
+      const address = await this.prisma.address.findUnique({
+        where: { id: id },
+      }); 
+    
+      if (address?.verficiationCode !== verifyAddressDto.code) {
+        throw new HttpException(
+          `code: ${verifyAddressDto.code} not valid for ${id}.`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      await this.prisma.address.updateMany({
+        where: {
+          id: id,
+          walletId: wallet.id,
+        },
+        data: {
+          verified: true,
+          verficiationCode: undefined
+        },
+      }); 
+
+      let dappAddress = await this.prisma.dappAddress.findUnique({
+        where: {
+          id,
+        },
+        include: {
+          address: true,
+          dapp: true,
+        },
+      });
+    
+      if (dappAddress?.address.walletId !== wallet.id)
+        throw new HttpException(
+          `Could not find dapp address ${id} owned by wallet ${wallet.publicKey}.`,
+          HttpStatus.BAD_REQUEST,
+        );
+    
+      return {
+        id: dappAddress.id,
+        addressId: dappAddress.address.id,
+        type: dappAddress.address.type,
+        verified: dappAddress.address.verified,
+        dapp: dappAddress.dapp.publicKey,
+        enabled: dappAddress.enabled,
+      };
+    }
+    catch(e) {
+      console.log(e);
+    }
   }
 }

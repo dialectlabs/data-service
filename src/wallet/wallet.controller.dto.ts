@@ -62,4 +62,8 @@ export class PostDappAddressDto extends PutDappAddressDto {
   readonly type!: string;
 }
 
+export class VerifyAddressDto {
+  readonly code!: string
+}
+
 export class PostDappAddressDto2 extends PutDappAddressDto {}
