@@ -24,6 +24,7 @@ import { Wallet } from '@prisma/client';
 import { DappService } from '../dapp/dapp.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { InjectWallet } from '../auth/auth.decorator';
+import { MailService } from '../mail/mail.service';
 
 @ApiTags('Wallets')
 @Controller({
@@ -34,6 +35,7 @@ export class WalletController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly dappService: DappService,
+    private readonly mailService: MailService,
   ) {}
 
   /**
@@ -161,10 +163,7 @@ export class WalletController {
             verficiationCode: code
           }
         });
-
-        console.log(address);
       } catch (e: any) {
-        console.log('e', e);
         if (e?.message?.includes('Unique constraint failed'))
           throw new HttpException(
             `Wallet ${publicKey} already has a ${type} address on file. You must therefore supply an addressId to this route.`,
@@ -175,6 +174,9 @@ export class WalletController {
           HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
+
+      this.mailService.sendVerificationCode(value, code);
+
     } else if (value) {
       /**
              Case 2: Address exists and must be updated.
@@ -295,6 +297,8 @@ export class WalletController {
                                                             
                                                                   This is determined by addressId & value being supplied.
                                                                   */
+
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
       await this.prisma.address.updateMany({
         where: {
           id: addressId,
@@ -302,8 +306,13 @@ export class WalletController {
         },
         data: {
           value,
+          verficiationCode: code,
+          verified: false
         },
       });
+
+
+      this.mailService.sendVerificationCode(value, code);
 
       address = await this.prisma.address.findUnique({
         where: { id: addressId },
@@ -383,11 +392,11 @@ export class WalletController {
     @InjectWallet() wallet: Wallet,
     @Body() verifyAddressDto: VerifyAddressDto,
   ): Promise<any> {
-    await this.dappService.lookupDapp(dappPublicKey);
+    const dapp = await this.dappService.lookupDapp(dappPublicKey);
 
     try {
       const address = await this.prisma.address.findUnique({
-        where: { id: id },
+        where: { id: verifyAddressDto.addressId },
       }); 
     
       if (address?.verficiationCode !== verifyAddressDto.code) {
@@ -399,7 +408,7 @@ export class WalletController {
 
       await this.prisma.address.updateMany({
         where: {
-          id: id,
+          id: verifyAddressDto.addressId,
           walletId: wallet.id,
         },
         data: {
@@ -410,7 +419,7 @@ export class WalletController {
 
       let dappAddress = await this.prisma.dappAddress.findUnique({
         where: {
-          id,
+          id: id,
         },
         include: {
           address: true,
@@ -420,7 +429,7 @@ export class WalletController {
     
       if (dappAddress?.address.walletId !== wallet.id)
         throw new HttpException(
-          `Could not find dapp address ${id} owned by wallet ${wallet.publicKey}.`,
+          `Could not find dapp address ${dapp.id} owned by wallet ${wallet.publicKey}.`,
           HttpStatus.BAD_REQUEST,
         );
     
@@ -438,3 +447,4 @@ export class WalletController {
     }
   }
 }
+
