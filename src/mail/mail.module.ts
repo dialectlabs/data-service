@@ -5,7 +5,7 @@ import { MailService } from './mail.service';
 @Module({
     imports: [
         SendGridModule.forRoot({
-            apiKey: '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',
+            apiKey: String(process.env.SENDGRID_KEY),
         }),
     ],
     providers: [MailService],
