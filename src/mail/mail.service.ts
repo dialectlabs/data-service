@@ -4,7 +4,8 @@ import sgMail from "@sendgrid/mail"
 @Injectable()
 export class MailService {
   constructor() {
-    sgMail.setApiKey('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');
+    const key = String(process.env.SENDGRID_KEY);
+    sgMail.setApiKey(key);
   }
 
   async sendVerificationCode(email: string, code: string ) {

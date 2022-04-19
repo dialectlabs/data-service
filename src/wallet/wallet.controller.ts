@@ -25,6 +25,7 @@ import { DappService } from '../dapp/dapp.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { InjectWallet } from '../auth/auth.decorator';
 import { MailService } from '../mail/mail.service';
+import { generateVerificationCode } from 'src/utils';
 
 @ApiTags('Wallets')
 @Controller({
@@ -152,7 +153,7 @@ export class WalletController {
        * Generating 6 digit code to approve email
       */
 
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      const code = generateVerificationCode();
 
       try {
         address = await this.prisma.address.create({
@@ -298,7 +299,7 @@ export class WalletController {
                                                                   This is determined by addressId & value being supplied.
                                                                   */
 
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      const code = generateVerificationCode();
       await this.prisma.address.updateMany({
         where: {
           id: addressId,
@@ -445,6 +446,61 @@ export class WalletController {
     catch(e) {
       console.log(e);
     }
+  }
+
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @Post(':public_key/dapps/:dapp/addresses/:id/resendCode')
+  async resendCode(
+    @Param('id') id: string,
+    @Param('public_key') publicKey: string,
+    @Param('dapp') dappPublicKey: string,
+    @InjectWallet() wallet: Wallet,
+    @Body() dAppAddressDto: DappAddressDto,
+  ): Promise<any> { 
+      if (!dAppAddressDto.addressId) {
+        throw new HttpException(
+          `An addressId (${dAppAddressDto.addressId}) must be supplied.`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      try {
+        const code = generateVerificationCode();
+        await this.prisma.address.updateMany({
+          where: {
+            id: dAppAddressDto.addressId,
+            walletId: wallet.id,
+          },
+          data: {
+            verficiationCode: code,
+          },
+        });
+
+       const address = await this.prisma.address.findUnique({
+          where: { id: dAppAddressDto.addressId },
+        });
+
+        
+        if (!address) {
+          throw new HttpException(
+            `Address ${dAppAddressDto.addressId} not found. Check your inputs and try again.`,
+            HttpStatus.NOT_FOUND,
+          );
+        }
+
+
+        this.mailService.sendVerificationCode(address.value, code);
+      }
+    
+      catch {
+        throw new HttpException(
+          `Could not find address ${dAppAddressDto.addressId} for wallet ${wallet.publicKey}. Check your inputs and try again.`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    
   }
 }
 
