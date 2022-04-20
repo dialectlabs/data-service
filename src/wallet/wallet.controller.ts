@@ -19,6 +19,7 @@ import {
   PostDappAddressDto,
   PutDappAddressDto,
   VerifyAddressDto,
+  VerifySmsDto,
 } from './wallet.controller.dto';
 import { Wallet } from '@prisma/client';
 import { DappService } from '../dapp/dapp.service';
@@ -26,6 +27,7 @@ import { AuthGuard } from '../auth/auth.guard';
 import { InjectWallet } from '../auth/auth.decorator';
 import { MailService } from '../mail/mail.service';
 import { generateVerificationCode } from 'src/utils';
+import { SmsVerificationService } from 'src/sms/sms.service';
 
 @ApiTags('Wallets')
 @Controller({
@@ -37,6 +39,7 @@ export class WalletController {
     private readonly prisma: PrismaService,
     private readonly dappService: DappService,
     private readonly mailService: MailService,
+    private readonly smsVerificationService: SmsVerificationService,
   ) {}
 
   /**
@@ -176,7 +179,11 @@ export class WalletController {
         );
       }
 
-      this.mailService.sendVerificationCode(value, code);
+      if (type == "email") {
+        this.mailService.sendVerificationCode(value, code);
+      } else if (type == "sms") {
+        this.smsVerificationService.sendVerificationCode(value, code);
+      }
 
     } else if (value) {
       /**
@@ -294,10 +301,10 @@ export class WalletController {
     let address;
     if (addressId && value) {
       /*
-                                                                  Case 1: Address must be updated.
-                                                            
-                                                                  This is determined by addressId & value being supplied.
-                                                                  */
+      Case 1: Address must be updated.
+
+      This is determined by addressId & value being supplied.
+      */
 
       const code = generateVerificationCode();
       await this.prisma.address.updateMany({
@@ -312,12 +319,15 @@ export class WalletController {
         },
       });
 
-
-      this.mailService.sendVerificationCode(value, code);
-
       address = await this.prisma.address.findUnique({
         where: { id: addressId },
       });
+
+      if (address?.type == "email") {
+        this.mailService.sendVerificationCode(value, code);
+      } else if (address?.type == "sms") {
+        this.smsVerificationService.sendVerificationCode(value, code);
+      }
 
       if (!address)
         throw new HttpException(
@@ -326,8 +336,8 @@ export class WalletController {
         );
     } else {
       /*
-                                                                  Case 2: Address does not need to be updated.
-                                                                  */
+      Case 2: Address does not need to be updated.
+      */
       const addresses = await this.prisma.address.findMany({
         where: {
           id: addressId,
@@ -490,8 +500,11 @@ export class WalletController {
           );
         }
 
-
-        this.mailService.sendVerificationCode(address.value, code);
+        if (address.type == "email") {
+          this.mailService.sendVerificationCode(address.value, code);
+        } else if (address.type == "sms") {
+          this.smsVerificationService.sendVerificationCode(address.value, code);
+        }
       }
     
       catch {
