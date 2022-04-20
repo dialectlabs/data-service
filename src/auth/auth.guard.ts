@@ -67,7 +67,7 @@ export class AuthGuard implements CanActivate {
     this.validateSignature(expiresAtUtcMs, signature, signerPublicKey);
 
     const nowUtcMs = new Date().getTime();
-    if (expiresAtUtcMs > nowUtcMs) {
+    if (expiresAtUtcMs < nowUtcMs) {
       throw new UnauthorizedException('Token expired');
     }
   }
@@ -86,6 +86,7 @@ export class AuthGuard implements CanActivate {
         signature,
         signerPublicKey.toBytes(),
       );
+      console.log(signatureVerified);
       if (!signatureVerified) {
         throw new UnauthorizedException('Signature verification failed');
       }
