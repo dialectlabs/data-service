@@ -37,7 +37,8 @@
     "rimraf": "^3.0.2",
     "rxjs": "^7.5.2",
     "swagger-ui-express": "^4.3.0",
-    "tweetnacl": "^1.0.3"
+    "tweetnacl": "^1.0.3",
+    "twilio": "^3.76.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^8.0.0",
