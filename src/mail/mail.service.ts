@@ -12,7 +12,7 @@ export class MailService {
     const mail = {
       to: email,
       subject: "Verfification code",
-      from: 'hello@dialect.to',
+      from: String(process.env.SENDGRID_EMAIL),
       html: `<h1>${code}</h1`
     }
     try {
