@@ -161,7 +161,7 @@ export class WalletController {
             type,
             value,
             walletId: wallet.id,
-            verficiationCode: code
+            verificationCode: code
           }
         });
       } catch (e: any) {
@@ -307,7 +307,7 @@ export class WalletController {
         },
         data: {
           value,
-          verficiationCode: code,
+          verificationCode: code,
           verified: false
         },
       });
@@ -400,7 +400,7 @@ export class WalletController {
         where: { id: verifyAddressDto.addressId },
       }); 
     
-      if (address?.verficiationCode !== verifyAddressDto.code) {
+      if (address?.verificationCode !== verifyAddressDto.code) {
         throw new HttpException(
           `code: ${verifyAddressDto.code} not valid for ${id}.`,
           HttpStatus.BAD_REQUEST,
@@ -414,7 +414,7 @@ export class WalletController {
         },
         data: {
           verified: true,
-          verficiationCode: undefined
+          verificationCode: undefined
         },
       }); 
 
@@ -474,7 +474,7 @@ export class WalletController {
             walletId: wallet.id,
           },
           data: {
-            verficiationCode: code,
+            verificationCode: code,
           },
         });
 
