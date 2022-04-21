@@ -1,9 +1,12 @@
 import {
   IsBoolean,
+  isEmail,
   IsEmail,
   IsIn,
+  IsMobilePhone,
   IsNotEmpty,
   IsOptional,
+  IsString,
 } from 'class-validator';
 
 // Addresses
@@ -34,7 +37,7 @@ export class PutDappAddressDto {
       - enabled
     */
   readonly addressId!: string;
-  @IsEmail()
+  @IsString()
   @IsOptional()
   readonly value!: string;
   @IsNotEmpty()
@@ -58,7 +61,7 @@ export class PostDappAddressDto extends PutDappAddressDto {
       - addressId
       - enabled
     */
-  @IsIn(['email'])
+  @IsIn(['email', 'sms'])
   readonly type!: string;
 }
 
