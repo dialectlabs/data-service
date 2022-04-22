@@ -37,7 +37,7 @@ export class PutDappAddressDto {
       - enabled
     */
   readonly addressId!: string;
-  @IsString()
+  @IsString() // TODO: Support custom constraint https://stackoverflow.com/a/53786899/2322073
   @IsOptional()
   readonly value!: string;
   @IsNotEmpty()
