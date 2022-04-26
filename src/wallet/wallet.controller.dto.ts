@@ -61,7 +61,7 @@ export class PostDappAddressDto extends PutDappAddressDto {
       - addressId
       - enabled
     */
-  @IsIn(['email', 'sms'])
+  @IsIn(['email', 'sms', 'telegram'])
   readonly type!: string;
 }
 
