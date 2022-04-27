@@ -5,7 +5,7 @@ import { TelegramService } from './telegram.service';
 
 @Module({
     imports: [PrismaModule, TelegrafModule.forRoot({
-        token: '5327432776:AAGHl2BWCHiAaE6NFslnLehg8Q_dUHn8sCQ'
+        token: String(process.env.TELEGRAM_TOKEN)
     })],
     providers: [TelegramService],
     exports: [TelegramService]

@@ -22,14 +22,9 @@ import { PrismaService } from 'src/prisma/prisma.service';
         });
         
         if (!addresses[0]) {
-            await ctx.reply("We can't find any telegram address attached to the wallet")
+            await ctx.reply("You're already receiving notifications or your wallet not attached")
+        } else {
+            await ctx.reply(`Welcome to dialect, ${ctx.update.message.from.first_name}.\nHere is your verification code: ${addresses[0].verificationCode}`);
         }
-
-        await ctx.reply(`Welcome to dialect, ${ctx.update.message.from.first_name}.\nHere is your verification code: ${addresses[0].verificationCode}`);
-    }
-  
-    @Help()
-    async help(@Ctx() ctx: any) {
-      //await ctx.reply('Send me a sticker');
     }
   }
