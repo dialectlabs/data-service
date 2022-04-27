@@ -86,7 +86,6 @@ export class AuthGuard implements CanActivate {
         signature,
         signerPublicKey.toBytes(),
       );
-      console.log(signatureVerified);
       if (!signatureVerified) {
         throw new UnauthorizedException('Signature verification failed');
       }
