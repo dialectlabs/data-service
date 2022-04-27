@@ -11,9 +11,13 @@ export class MailService {
   async sendVerificationCode(email: string, code: string ) {
     const mail = {
       to: email,
-      subject: "Verfification code",
+      subject: "Hello from Dialect — Verify your email address",
       from: String(process.env.SENDGRID_EMAIL),
-      html: `<h1>${code}</h1`
+      html: `Welcome to Dialect. Please confirm your email address using the code provided below:
+      
+<h1>${code}</h1>
+
+If you didn't sign up for web3 notifications using Dialect, you can ignore this email.`
     }
     try {
       const transport = await sgMail.send(mail);
