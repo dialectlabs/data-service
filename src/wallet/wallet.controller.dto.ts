@@ -1,9 +1,9 @@
 import {
   IsBoolean,
-  IsEmail,
   IsIn,
   IsNotEmpty,
   IsOptional,
+  IsString,
 } from 'class-validator';
 
 // Addresses
@@ -34,7 +34,7 @@ export class PutDappAddressDto {
       - enabled
     */
   readonly addressId!: string;
-  @IsEmail()
+  @IsString() // TODO: Support custom constraint https://stackoverflow.com/a/53786899/2322073
   @IsOptional()
   readonly value!: string;
   @IsNotEmpty()
@@ -58,8 +58,17 @@ export class PostDappAddressDto extends PutDappAddressDto {
       - addressId
       - enabled
     */
-  @IsIn(['email'])
+  @IsIn(['email', 'sms'])
   readonly type!: string;
+}
+
+export class VerifyAddressDto {
+  readonly code!: string;
+  readonly addressId!: string;
+}
+export class VerifySmsDto {
+  readonly code!: string;
+  readonly addressId!: string;
 }
 
 export class PostDappAddressDto2 extends PutDappAddressDto {}

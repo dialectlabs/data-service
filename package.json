@@ -24,8 +24,10 @@
     "@nestjs/core": "^8.0.0",
     "@nestjs/platform-express": "^8.0.0",
     "@nestjs/swagger": "^5.2.0",
+    "@ntegral/nestjs-sendgrid": "^1.0.0",
     "@prisma/client": "3.10.0",
     "@project-serum/anchor": "^0.18.0",
+    "@sendgrid/mail": "^7.6.2",
     "@solana/web3.js": "^1.27.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.13.2",
@@ -35,7 +37,8 @@
     "rimraf": "^3.0.2",
     "rxjs": "^7.5.2",
     "swagger-ui-express": "^4.3.0",
-    "tweetnacl": "^1.0.3"
+    "tweetnacl": "^1.0.3",
+    "twilio": "^3.76.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^8.0.0",
@@ -54,6 +57,7 @@
     "eslint": "^8.0.1",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
+    "fork-ts-checker-webpack-plugin": "^7.2.6",
     "jest": "^27.2.5",
     "prettier": "^2.5.1",
     "source-map-support": "^0.5.20",
