@@ -6,7 +6,13 @@ import { MailModule } from './mail/mail.module';
 import { SmsVerificationModule } from './sms/sms.module';
 
 @Module({
-  imports: [PrismaModule, WalletModule, DappModule, MailModule, SmsVerificationModule],
+  imports: [
+    PrismaModule,
+    WalletModule,
+    DappModule,
+    MailModule,
+    SmsVerificationModule,
+  ],
   providers: [],
 })
 export class AppModule {}
