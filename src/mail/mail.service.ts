@@ -7,7 +7,7 @@ export class MailService {
     const key = String(process.env.SENDGRID_KEY);
     sgMail.setApiKey(key);
   }
-
+  
   async sendVerificationCode(email: string, code: string) {
     const mail = {
       to: email,
@@ -17,6 +17,7 @@ export class MailService {
       <h1>${code}</h1>
       If you didn't sign up for web3 notifications using Dialect, you can ignore this email.`,
     };
+
     try {
       const transport = await sgMail.send(mail);
       // avoid this on production. use log instead :)
