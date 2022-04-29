@@ -68,7 +68,7 @@ import { PublicKey } from '@solana/web3.js';
 
         if (wallet) {
           const idx = web2Subs.findIndex((sub) => sub.resourceId.toString() == wallet?.publicKey); // TODO resourceId.toString()/base58() ?
-          if (idx) {
+          if (idx != -1) {
             // update for this address type
             address.type == 'email' ? web2Subs[idx].email = address.value :
              address.type == 'sms' ? web2Subs[idx].smsNumber = address.value :
