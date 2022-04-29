@@ -38,7 +38,8 @@ export class BasicAuthGuard implements CanActivate {
     if (!username || !THE_ONLY_BASIC_AUTH_USER) {
       throw new UnauthorizedException();
     }
-    if (username !== THE_ONLY_BASIC_AUTH_USER) {
+
+    if (username !== `Basic ${THE_ONLY_BASIC_AUTH_USER}`) {
       throw new UnauthorizedException();
     }
   }
