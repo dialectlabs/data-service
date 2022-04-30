@@ -36,6 +36,7 @@ export class Web2SubscriberController {
        Dapp Addresses
        Query all address for a given dapp and arrange as web2Subscriber dto
        Get a list of addresses on file for a given dapp. Returns the wallet publickey, type (e.g. 'email'), and value (e.g. 'chris@dialect.to'), ONLY if it's verified and enabled.
+
        */
   @Get('all/:dapp')
   async get(@Param('dapp') dappPublicKey: string): Promise<Web2Subscriber[]> {
