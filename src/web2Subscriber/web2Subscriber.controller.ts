@@ -43,6 +43,7 @@ import { PublicKey } from '@solana/web3.js';
     async get(
       @Param('dapp') dappPublicKey: string,
     ): Promise<Web2Subscriber[]> {
+      console.log("Hit route GET web2Subs\n");
       let web2Subs: Web2Subscriber[] = [];
 
       // get all verified address records subscribed to the dapp
@@ -74,16 +75,17 @@ import { PublicKey } from '@solana/web3.js';
             // update for this address type
             wallet.address.type == 'email' ? web2Subs[idx].email = wallet.address.value :
             wallet.address.type == 'sms' ? web2Subs[idx].smsNumber =  wallet.address.value :
-            wallet.address.type == 'telegram' ? web2Subs[idx].telegramId = wallet.address.value : '';
+            wallet.address.type == 'telegram' ? web2Subs[idx].telegramId = wallet.address.value : ''; // TODO lookup dappAddress.metadata.tgChatId
             
           } else {
             // create with this address type
             let web2Subscriber: Web2Subscriber = { resourceId: new PublicKey(wallet.publicKey || '') };
             wallet.address.type == 'email' ? web2Subscriber.email = wallet.address.value :
             wallet.address.type == 'sms' ? web2Subscriber.smsNumber = wallet.address.value :
-            wallet.address.type == 'telegram' ? web2Subscriber.telegramId = wallet.address.value : '';
+            wallet.address.type == 'telegram' ? web2Subscriber.telegramId = wallet.address.value : ''; // TODO lookup dappAddress.metadata.tgChatId
             web2Subs.push(web2Subscriber);
           }
+          console.log({web2Subs});
         }
       });
             

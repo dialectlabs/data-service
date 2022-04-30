@@ -58,6 +58,7 @@ model Dapp {
 
   // columns
   publicKey String @unique @map("public_key")
+  // TODO eventually use dapp signature for verification similar to user wallets
 
   // relations
   dappAddresses DappAddress[]
@@ -74,6 +75,8 @@ model DappAddress {
 
   // columns
   enabled Boolean
+  // TODO 'metadata String' which is json with telegramChatId attribute
+  //      or a relation to a metadata table? could be cleaner for lookups base on metadata
 
   // relations
   addressId String  @map("address_id") @db.Uuid
