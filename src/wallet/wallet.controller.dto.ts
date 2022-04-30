@@ -1,9 +1,6 @@
 import {
   IsBoolean,
-  isEmail,
-  IsEmail,
   IsIn,
-  IsMobilePhone,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -66,11 +63,11 @@ export class PostDappAddressDto extends PutDappAddressDto {
 }
 
 export class VerifyAddressDto {
-  readonly code!: string
+  readonly code!: string;
   readonly addressId!: string;
 }
 export class VerifySmsDto {
-  readonly code!: string
+  readonly code!: string;
   readonly addressId!: string;
 }
 
