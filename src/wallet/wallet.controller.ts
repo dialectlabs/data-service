@@ -154,7 +154,7 @@ export class WalletController {
       console.log('POST case 1: Creating an address...');
       /**
        * Generating 6 digit code to approve email
-      */
+       */
 
       const code = generateVerificationCode();
 
@@ -164,8 +164,8 @@ export class WalletController {
             type,
             value,
             walletId: wallet.id,
-            verificationCode: code
-          }
+            verificationCode: code,
+          },
         });
       } catch (e: any) {
         if (e?.message?.includes('Unique constraint failed'))
@@ -179,12 +179,11 @@ export class WalletController {
         );
       }
 
-      if (type == "email") {
+      if (type == 'email') {
         this.mailService.sendVerificationCode(value, code);
-      } else if (type == "sms") {
+      } else if (type == 'sms') {
         this.smsVerificationService.sendVerificationCode(value, code);
       }
-
     } else if (value) {
       /**
              Case 2: Address exists and must be updated.
@@ -315,7 +314,7 @@ export class WalletController {
         data: {
           value,
           verificationCode: code,
-          verified: false
+          verified: false,
         },
       });
 
@@ -323,9 +322,9 @@ export class WalletController {
         where: { id: addressId },
       });
 
-      if (address?.type == "email") {
+      if (address?.type == 'email') {
         this.mailService.sendVerificationCode(value, code);
-      } else if (address?.type == "sms") {
+      } else if (address?.type == 'sms') {
         this.smsVerificationService.sendVerificationCode(value, code);
       }
 
@@ -407,13 +406,13 @@ export class WalletController {
 
     const address = await this.prisma.address.findUnique({
       where: { id: verifyAddressDto.addressId },
-    }); 
+    });
 
     if (!address)
-    throw new HttpException(
-      `Address ${verifyAddressDto.addressId} not found. Check your inputs and try again.`,
-      HttpStatus.NOT_FOUND,
-    );
+      throw new HttpException(
+        `Address ${verifyAddressDto.addressId} not found. Check your inputs and try again.`,
+        HttpStatus.NOT_FOUND,
+      );
 
     if (address?.verificationCode !== verifyAddressDto.code) {
       throw new HttpException(
@@ -429,9 +428,9 @@ export class WalletController {
       },
       data: {
         verified: true,
-        verificationCode: undefined
+        verificationCode: undefined,
       },
-    }); 
+    });
 
     let dappAddress = await this.prisma.dappAddress.findUnique({
       where: {
@@ -442,13 +441,13 @@ export class WalletController {
         dapp: true,
       },
     });
-    
+
     if (dappAddress?.address.walletId !== wallet.id)
       throw new HttpException(
         `Could not find dapp address ${dapp.id} owned by wallet ${wallet.publicKey}.`,
         HttpStatus.BAD_REQUEST,
       );
-    
+
     return {
       id: dappAddress.id,
       addressId: dappAddress.address.id,
@@ -459,7 +458,6 @@ export class WalletController {
     };
   }
 
-
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @Post(':public_key/dapps/:dapp/addresses/:id/resendCode')
@@ -469,51 +467,40 @@ export class WalletController {
     @Param('dapp') dappPublicKey: string,
     @InjectWallet() wallet: Wallet,
     @Body() dAppAddressDto: DappAddressDto,
-  ): Promise<any> { 
-      if (!dAppAddressDto.addressId) {
-        throw new HttpException(
-          `An addressId (${dAppAddressDto.addressId}) must be supplied.`,
-          HttpStatus.BAD_REQUEST,
-        );
-      }
+  ): Promise<any> {
+    if (!dAppAddressDto.addressId) {
+      throw new HttpException(
+        `An addressId (${dAppAddressDto.addressId}) must be supplied.`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
-      try {
-        const code = generateVerificationCode();
-        await this.prisma.address.updateMany({
-          where: {
-            id: dAppAddressDto.addressId,
-            walletId: wallet.id,
-          },
-          data: {
-            verificationCode: code,
-          },
-        });
+    const code = generateVerificationCode();
+    await this.prisma.address.updateMany({
+      where: {
+        id: dAppAddressDto.addressId,
+        walletId: wallet.id,
+      },
+      data: {
+        verificationCode: code,
+      },
+    });
 
-       const address = await this.prisma.address.findUnique({
-          where: { id: dAppAddressDto.addressId },
-        });
+    const address = await this.prisma.address.findUnique({
+      where: { id: dAppAddressDto.addressId },
+    });
 
-        
-        if (!address) {
-          throw new HttpException(
-            `Address ${dAppAddressDto.addressId} not found. Check your inputs and try again.`,
-            HttpStatus.NOT_FOUND,
-          );
-        }
+    if (!address) {
+      throw new HttpException(
+        `Address ${dAppAddressDto.addressId} not found. Check your inputs and try again.`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
 
-        if (address.type == "email") {
-          this.mailService.sendVerificationCode(address.value, code);
-        } else if (address.type == "sms") {
-          this.smsVerificationService.sendVerificationCode(address.value, code);
-        }
-      }
-    
-      catch {
-        throw new HttpException(
-          `Could not find address ${dAppAddressDto.addressId} for wallet ${wallet.publicKey}. Check your inputs and try again.`,
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-    
+    if (address.type == 'email') {
+      this.mailService.sendVerificationCode(address.value, code);
+    } else if (address.type == 'sms') {
+      this.smsVerificationService.sendVerificationCode(address.value, code);
+    }
   }
 }

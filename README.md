@@ -1,5 +1,10 @@
 # Wallet-address-registry-service service
 
+This datastore is an "address book" for securely & privately storing a wallet user's associated addresses (email, sms, telegram, etc) off-chain.
+When implemented, user's who subscribe to receive web2 notifications from dapps would have their address information stored in the database.
+Dialect [Terms of Service](https://www.dialect.to/tos)
+Dialect [Privacy Policy](https://www.dialect.to/privacy)
+
 ## Development
 
 ### Prerequisites
