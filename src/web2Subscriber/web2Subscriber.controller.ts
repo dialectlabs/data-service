@@ -43,21 +43,36 @@ export class Web2SubscriberController {
     const web2Subs: Web2Subscriber[] = [];
 
     // get all verified address records subscribed to the dapp
-    const subscriberAddresses = await this.prisma.address.findMany({
+    // const subscriberAddresses = await this.prisma.address.findMany({
+    //   where: {
+    //     dappAddresses: {
+    //       some: {
+    //         dapp: {
+    //           publicKey: dappPublicKey,
+    //         },
+    //       },
+    //     },
+    //     verified: true,
+    //   },
+    // });
+
+    const subscriberDappAddresses = await this.prisma.dappAddress.findMany({
       where: {
-        dappAddresses: {
-          some: {
-            dapp: {
-              publicKey: dappPublicKey,
-            },
-          },
+        enabled: true,
+        address: {
+          verified: true,
         },
-        verified: true,
+        dapp: {
+          publicKey: dappPublicKey,
+        }
+      },
+      include: {
+        address: true,
       },
     });
 
     const results = await Promise.all(
-      subscriberAddresses.map(async (address) => {
+      subscriberDappAddresses.map(sda => sda.address).map(async (address) => {
         const wallet = await this.prisma.wallet.findUnique({
           where: { id: address.walletId },
         });
