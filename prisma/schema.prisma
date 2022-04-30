@@ -58,6 +58,8 @@ model Dapp {
 
   // columns
   publicKey String @unique @map("public_key")
+  telegramKey String? 
+  
 
   // relations
   dappAddresses DappAddress[]
@@ -73,7 +75,8 @@ model DappAddress {
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   // columns
-  enabled Boolean
+  enabled   Boolean
+  metadata  String?
 
   // relations
   addressId String  @map("address_id") @db.Uuid
