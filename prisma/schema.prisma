@@ -75,7 +75,7 @@ model DappAddress {
 
   // columns
   enabled   Boolean
-  metadata  String?
+  metadata  Json?
 
   // relations
   addressId String  @map("address_id") @db.Uuid
