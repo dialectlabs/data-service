@@ -20,7 +20,7 @@ export class SmsVerificationService {
         to: recipientSmsNumber,
         from: process.env.TWILIO_SMS_SENDER!,
         body: `Hello from Dialect — Your verification code is ${verificationCode}.
-        If you didn't sign up for web3 notifications, you can ignore this text. Reply STOP to stop.`,
+If you didn't sign up for web3 notifications, you can ignore this text. Reply STOP to stop.`,
       });
     } catch (e: any) {
       console.log(e['response'].body);
