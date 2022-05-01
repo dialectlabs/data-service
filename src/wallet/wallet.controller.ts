@@ -104,6 +104,7 @@ export class WalletController {
         dappAddresses: true,
       }
     });
+    //@ts-ignore
     return addresses.map((address) => {
       const thisDappsAddresses = address.dappAddresses.filter(da => da.dappId === dapp.id);
       const thisDappsAddress = thisDappsAddresses.length > 0 && thisDappsAddresses[0] || null;
@@ -142,7 +143,6 @@ export class WalletController {
     const type = postDappAddressDto.type;
     const value = postDappAddressDto.value;
     const enabled = postDappAddressDto.enabled;
-
     let address;
     if (!addressId && type && value) {
       /*

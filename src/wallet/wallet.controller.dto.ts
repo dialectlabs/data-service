@@ -10,7 +10,7 @@ import {
 
 export class AddressDto {
   @IsOptional()
-  readonly id?: string;
+  readonly id!: string;
   readonly type!: string; // e.g. 'email' or 'sms'
   readonly verified!: boolean;
 }
