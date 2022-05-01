@@ -60,7 +60,10 @@ export class TelegramService {
         addressId: { in: dappAddressIds },
       },
       data: {
-        metadata: ctx.update.message.from.id.toString(),
+        metadata: {
+          // N.b. .from.id is named as a chat_id, but in Telegram, for 1:1 messaging, the chat_id is equivalent to the (sender) user id. https://core.telegram.org/bots/api#getchat.
+          telegram_chat_id: ctx.update.message.from.id.toString(),
+        },
       },
     });
 

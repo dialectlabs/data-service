@@ -99,7 +99,7 @@ export class Web2SubscriberController {
             : wallet.address.type == 'sms'
             ? (web2Subs[idx].smsNumber = wallet.address.value)
             : wallet.address.type == 'telegram'
-            ? (web2Subs[idx].telegramId = wallet.dapp?.metadata || undefined)
+            ? (web2Subs[idx].telegramId = wallet.dapp?.metadata?.telegram_chat_id || undefined)
             : undefined;
         } else {
           // create with this address type
@@ -111,7 +111,7 @@ export class Web2SubscriberController {
             : wallet.address.type == 'sms'
             ? (web2Subscriber.smsNumber = wallet.address.value)
             : wallet.address.type == 'telegram'
-            ? (web2Subscriber.telegramId = wallet.dapp?.metadata || undefined)
+            ? (web2Subscriber.telegramId = wallet.dapp?.metadata?.telegram_chat_id || undefined)
             : undefined;
           web2Subs.push(web2Subscriber);
         }

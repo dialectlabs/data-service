@@ -58,7 +58,7 @@ model Dapp {
 
   // columns
   publicKey String @unique @map("public_key")
-  telegramKey String?
+  telegramKey String? @map("telegram_key")
 
   // relations
   dappAddresses DappAddress[]
