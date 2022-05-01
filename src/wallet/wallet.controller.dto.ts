@@ -9,7 +9,8 @@ import {
 // Addresses
 
 export class AddressDto {
-  readonly id!: string;
+  @IsOptional()
+  readonly id?: string;
   readonly type!: string; // e.g. 'email' or 'sms'
   readonly verified!: boolean;
 }
