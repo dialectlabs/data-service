@@ -15,6 +15,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PrismaService } from '../prisma/prisma.service';
 import { BasicAuthGuard } from 'src/auth/basic-auth.guard';
 import { PublicKey } from '@solana/web3.js';
+import { json } from 'stream/consumers';
 
 export interface Web2Subscriber {
   resourceId: PublicKey;
