@@ -436,7 +436,7 @@ export class WalletController {
       },
       data: {
         verified: true,
-        verificationCode: undefined,
+        verificationCode: null,
       },
     });
 
