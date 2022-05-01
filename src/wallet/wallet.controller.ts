@@ -94,6 +94,7 @@ export class WalletController {
     @Param('dapp') dappPublicKey: string,
   ): Promise<DappAddressDto[]> {
     const dapp = await this.dappService.lookupDapp(dappPublicKey);
+    // Query for all addresses for a wallet
     const addresses = await this.prisma.address.findMany({
       where: {
         wallet: {
@@ -105,16 +106,18 @@ export class WalletController {
       }
     });
     return addresses.map((address) => {
+      // Filter for only the dapp addresses affiliated with this dapp.
       const thisDappsAddresses = address.dappAddresses.filter(da => da.dappId === dapp.id);
       const thisDappsAddress = thisDappsAddresses.length > 0 && thisDappsAddresses[0] || null;
       const id = thisDappsAddress?.id;
+      const enabled = thisDappsAddress?.enabled || false;
       return {
-        id: id,
+        id,
         addressId: address.id,
         type: address.type,
         verified: address.verified,
         dapp: dapp.publicKey,
-        enabled: thisDappsAddress?.enabled || false,
+        enabled,
       };
     });
   }
