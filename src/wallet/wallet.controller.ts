@@ -231,6 +231,12 @@ export class WalletController {
         );
       address = addresses[0];
     }
+    if (type === 'wallet' && wallet.publicKey != value)
+        throw new HttpException(
+          `Value should be equal to wallet ${wallet.publicKey}. Check your inputs and try again.`,
+          HttpStatus.BAD_REQUEST,
+        );
+
     let dappAddress;
     try {
       dappAddress = await this.prisma.dappAddress.create({
