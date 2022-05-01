@@ -9,6 +9,7 @@ import {
 // Addresses
 
 export class AddressDto {
+  @IsOptional()
   readonly id!: string;
   readonly type!: string; // e.g. 'email' or 'sms'
   readonly verified!: boolean;
@@ -58,7 +59,7 @@ export class PostDappAddressDto extends PutDappAddressDto {
       - addressId
       - enabled
     */
-  @IsIn(['wallet', 'email', 'sms'])
+  @IsIn(['wallet', 'email', 'sms', 'telegram'])
   readonly type!: string;
 }
 
