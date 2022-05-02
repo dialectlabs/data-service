@@ -68,7 +68,7 @@ export class TelegramService {
     });
 
     await ctx.reply(
-      `Welcome to dialect, ${ctx.update.message.from.first_name}.\nHere is your verification code: ${addresses[0].verificationCode}`,
+      `Welcome to dialect.\nHere is your verification code: ${addresses[0].verificationCode}`,
     );
   }
 }
