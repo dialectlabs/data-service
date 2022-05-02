@@ -1,14 +1,14 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
-import { Web2SubscriberController } from './web2Subscriber.controller';
+import { SubscriberController } from './subscriber.controller';
 import { LoggerMiddleware } from '../middleware/logger.middleware';
 
 @Module({
   imports: [PrismaModule],
   exports: [],
-  controllers: [Web2SubscriberController],
+  controllers: [SubscriberController],
 })
-export class Web2SubscriberModule implements NestModule {
+export class SubscriberModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(LoggerMiddleware).forRoutes('*');
   }

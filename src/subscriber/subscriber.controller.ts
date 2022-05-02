@@ -17,14 +17,12 @@ import { BasicAuthGuard } from 'src/auth/basic-auth.guard';
 import { PublicKey } from '@solana/web3.js';
 import { json } from 'stream/consumers';
 
-export interface Web2Subscriber {
+export interface Subscriber {
   resourceId: PublicKey;
   email?: string;
   telegramId?: string;
   smsNumber?: string;
 }
-
-// GET /v0/api/dapps/:dapp/subscribers
 
 @ApiTags('Dapps')
 @UseGuards(BasicAuthGuard)
@@ -32,18 +30,18 @@ export interface Web2Subscriber {
   path: 'dapps',
   version: '0',
 })
-export class Web2SubscriberController {
+export class SubscriberController {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-       Dapp Addresses
-       Query all address for a given dapp and arrange as web2Subscriber dto
-       Get a list of addresses on file for a given dapp. Returns the wallet publickey, type (e.g. 'email'), and value (e.g. 'chris@dialect.to'), ONLY if it's verified and enabled.
-
+       Dapp Subscriber Addresses
+       Query all addresses for a given dapp and arrange by Subscriber
+       Returns addresses ONLY if verified and enabled.
+       e.g. GET /v0/api/dapps/:dapp/subscribers
        */
   @Get(':dapp/subscribers')
-  async get(@Param('dapp') dappPublicKey: string): Promise<Web2Subscriber[]> {
-    const web2Subs: Web2Subscriber[] = [];
+  async get(@Param('dapp') dappPublicKey: string): Promise<Subscriber[]> {
+    const subscribers: Subscriber[] = [];
 
     const subscriberDappAddresses = await this.prisma.dappAddress.findMany({
       where: {
@@ -78,37 +76,37 @@ export class Web2SubscriberController {
 
     results.forEach((wallet) => {
       if (wallet) {
-        const idx = web2Subs.findIndex(
+        const idx = subscribers.findIndex(
           (sub) => sub.resourceId.toString() == wallet?.publicKey,
-        ); // TODO resourceId.toString()/base58() ?
+        );
         if (idx != -1) {
           // update for this address type
           wallet.address.type == 'email'
-            ? (web2Subs[idx].email = wallet.address.value)
+            ? (subscribers[idx].email = wallet.address.value)
             : wallet.address.type == 'sms'
-            ? (web2Subs[idx].smsNumber = wallet.address.value)
+            ? (subscribers[idx].smsNumber = wallet.address.value)
             : wallet.address.type == 'telegram'
             // @ts-ignore
-            ? (web2Subs[idx].telegramId = wallet.dapp?.metadata?.telegram_chat_id || undefined)
+            ? (subscribers[idx].telegramId = wallet.dapp?.metadata?.telegram_chat_id || undefined)
             : undefined;
         } else {
           // create with this address type
-          const web2Subscriber: Web2Subscriber = {
+          const subscriber: Subscriber = {
             resourceId: new PublicKey(wallet.publicKey || ''),
           };
           wallet.address.type == 'email'
-            ? (web2Subscriber.email = wallet.address.value)
+            ? (subscriber.email = wallet.address.value)
             : wallet.address.type == 'sms'
-            ? (web2Subscriber.smsNumber = wallet.address.value)
+            ? (subscriber.smsNumber = wallet.address.value)
             : wallet.address.type == 'telegram'
             // @ts-ignore
-            ? (web2Subscriber.telegramId = wallet.dapp?.metadata?.telegram_chat_id || undefined)
+            ? (subscriber.telegramId = wallet.dapp?.metadata?.telegram_chat_id || undefined)
             : undefined;
-          web2Subs.push(web2Subscriber);
+          subscribers.push(subscriber);
         }
       }
     });
 
-    return web2Subs;
+    return subscribers;
   }
 }
