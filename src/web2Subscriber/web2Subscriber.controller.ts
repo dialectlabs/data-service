@@ -20,14 +20,16 @@ import { json } from 'stream/consumers';
 export interface Web2Subscriber {
   resourceId: PublicKey;
   email?: string;
-  telegramId?: string; // "<username>;<chat_id>"
+  telegramId?: string;
   smsNumber?: string;
 }
 
-@ApiTags('Web2Scubscribers')
+// GET /v0/api/dapps/:dapp/subscribers
+
+@ApiTags('Dapps')
 @UseGuards(BasicAuthGuard)
 @Controller({
-  path: 'web2Subscriber',
+  path: 'dapps',
   version: '0',
 })
 export class Web2SubscriberController {
@@ -39,23 +41,9 @@ export class Web2SubscriberController {
        Get a list of addresses on file for a given dapp. Returns the wallet publickey, type (e.g. 'email'), and value (e.g. 'chris@dialect.to'), ONLY if it's verified and enabled.
 
        */
-  @Get('all/:dapp')
+  @Get(':dapp/subscribers')
   async get(@Param('dapp') dappPublicKey: string): Promise<Web2Subscriber[]> {
     const web2Subs: Web2Subscriber[] = [];
-
-    // get all verified address records subscribed to the dapp
-    // const subscriberAddresses = await this.prisma.address.findMany({
-    //   where: {
-    //     dappAddresses: {
-    //       some: {
-    //         dapp: {
-    //           publicKey: dappPublicKey,
-    //         },
-    //       },
-    //     },
-    //     verified: true,
-    //   },
-    // });
 
     const subscriberDappAddresses = await this.prisma.dappAddress.findMany({
       where: {
