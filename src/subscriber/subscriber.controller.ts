@@ -37,7 +37,6 @@ export class SubscriberController {
        Dapp Subscriber Addresses
        Query all addresses for a given dapp and arrange by Subscriber
        Returns addresses ONLY if verified and enabled.
-       e.g. GET /v0/api/dapps/:dapp/subscribers
        */
   @Get(':dapp/subscribers')
   async get(@Param('dapp') dappPublicKey: string): Promise<Subscriber[]> {
