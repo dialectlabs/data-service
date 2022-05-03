@@ -94,30 +94,33 @@ export class WalletController {
     @Param('dapp') dappPublicKey: string,
   ): Promise<DappAddressDto[]> {
     const dapp = await this.dappService.lookupDapp(dappPublicKey);
-    const dappAddresses = await this.prisma.dappAddress.findMany({
+    // Query for all addresses for a wallet
+    const addresses = await this.prisma.address.findMany({
       where: {
-        dapp: {
-          id: dapp.id,
-        },
-        address: {
-          wallet: {
-            publicKey,
-          },
+        wallet: {
+          publicKey,
         },
       },
       include: {
-        address: true,
-        dapp: true,
-      },
+        dappAddresses: true,
+      }
     });
-    return dappAddresses.map((dappAddress) => ({
-      id: dappAddress.id,
-      addressId: dappAddress.address.id,
-      type: dappAddress.address.type,
-      verified: dappAddress.address.verified,
-      dapp: dappAddress.dapp.publicKey,
-      enabled: dappAddress.enabled,
-    }));
+    //@ts-ignore
+    return addresses.map((address) => {
+      // Filter for only the dapp addresses affiliated with this dapp.
+      const thisDappsAddresses = address.dappAddresses.filter(da => da.dappId === dapp.id);
+      const thisDappsAddress = thisDappsAddresses.length > 0 && thisDappsAddresses[0] || null;
+      const id = thisDappsAddress?.id;
+      const enabled = thisDappsAddress?.enabled || false;
+      return {
+        id,
+        addressId: address.id,
+        type: address.type,
+        verified: address.verified,
+        dapp: dapp.publicKey,
+        enabled,
+      };
+    });
   }
 
   /**
@@ -143,7 +146,6 @@ export class WalletController {
     const type = postDappAddressDto.type;
     const value = postDappAddressDto.value;
     const enabled = postDappAddressDto.enabled;
-
     let address;
     if (!addressId && type && value) {
       /*
@@ -229,6 +231,12 @@ export class WalletController {
         );
       address = addresses[0];
     }
+    if (type === 'wallet' && wallet.publicKey != value)
+        throw new HttpException(
+          `Value should be equal to wallet ${wallet.publicKey}. Check your inputs and try again.`,
+          HttpStatus.BAD_REQUEST,
+        );
+
     let dappAddress;
     try {
       dappAddress = await this.prisma.dappAddress.create({
@@ -428,7 +436,7 @@ export class WalletController {
       },
       data: {
         verified: true,
-        verificationCode: undefined,
+        verificationCode: null,
       },
     });
 

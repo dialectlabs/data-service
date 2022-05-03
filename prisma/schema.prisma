@@ -35,7 +35,7 @@ model Address {
   // columns
   type     String // e.g. 'email', 'telegram', 'sms', etc. TODO: Make this an enum, perhaps only at the server level, not db
   value    String // e.g. 'chris@dialect.to', '@chrisoss', etc.
-  verificationCode String? // 6-digit number code
+  verificationCode String? @map("verification_code") // 6-digit number code
   verified Boolean @default(false)
 
   // relations
@@ -58,6 +58,7 @@ model Dapp {
 
   // columns
   publicKey String @unique @map("public_key")
+  telegramKey String? @map("telegram_key")
 
   // relations
   dappAddresses DappAddress[]
@@ -73,7 +74,8 @@ model DappAddress {
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   // columns
-  enabled Boolean
+  enabled   Boolean
+  metadata  Json?
 
   // relations
   addressId String  @map("address_id") @db.Uuid
