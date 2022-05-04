@@ -13,6 +13,11 @@ async function bootstrap() {
     logger: ['log', 'warn', 'error'],
   });
 
+  // TODO: restrict with User-Agent, etc to be sure only our widget is targeting API
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,POST,DELETE',
+  });
   app.useGlobalPipes(new ValidationPipe());
   app.enableVersioning({
     type: VersioningType.URI,
