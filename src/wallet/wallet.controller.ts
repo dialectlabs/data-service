@@ -218,9 +218,10 @@ export class WalletController {
                                                                   Case 3: Address does not need to be created or updated.
                                                                   */
       console.log('POST case 3: No address, create or update...');
+      // This should be exactly 1 address. We use findMany to make prisma types happy.
       const addresses = await this.prisma.address.findMany({
         where: {
-          id: addressId,
+          type,
           walletId: wallet.id,
         },
       });
@@ -230,9 +231,16 @@ export class WalletController {
           `Could not find address ${addressId} for wallet ${wallet.publicKey}. Check your inputs and try again.`,
           HttpStatus.BAD_REQUEST,
         );
+        
+      // This should never happen. If it does something is wrong above.
+      if (addresses.length > 1)
+        throw new HttpException(
+          `Found more than one address for type ${type} and wallet public key ${wallet.publicKey}`, HttpStatus.BAD_REQUEST,
+        );
+
       address = addresses[0];
       console.log({address});
-      console.log({addresses});
+      // console.log({addresses});
     }
     if (type === 'wallet' && wallet.publicKey != value)
         throw new HttpException(
