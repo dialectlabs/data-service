@@ -109,6 +109,7 @@ export class WalletController {
     return addresses.map((address) => {
       // Filter for only the dapp addresses affiliated with this dapp.
       const thisDappsAddresses = address.dappAddresses.filter(da => da.dappId === dapp.id);
+      console.log(thisDappsAddresses)
       const thisDappsAddress = thisDappsAddresses.length > 0 && thisDappsAddresses[0] || null;
       const id = thisDappsAddress?.id;
       const enabled = thisDappsAddress?.enabled || false;
@@ -216,7 +217,7 @@ export class WalletController {
       /*
                                                                   Case 3: Address does not need to be created or updated.
                                                                   */
-      console.log('POST case 3: No address create or update...');
+      console.log('POST case 3: No address, create or update...');
       const addresses = await this.prisma.address.findMany({
         where: {
           id: addressId,
@@ -230,6 +231,8 @@ export class WalletController {
           HttpStatus.BAD_REQUEST,
         );
       address = addresses[0];
+      console.log({address});
+      console.log({addresses});
     }
     if (type === 'wallet' && wallet.publicKey != value)
         throw new HttpException(
@@ -239,6 +242,7 @@ export class WalletController {
 
     let dappAddress;
     try {
+      console.log(`${address.id}`);
       dappAddress = await this.prisma.dappAddress.create({
         data: {
           enabled,
@@ -252,6 +256,11 @@ export class WalletController {
       });
     } catch (e: any) {
       console.log('e', e);
+      console.log({dapp});
+      console.log({addressId});
+      const result = await this.prisma.dappAddress.findMany({});
+      console.log({result});
+      // TODO add these exceptions to http response but don't throw
       if (e?.message?.includes('Unique constraint failed'))
         throw new HttpException(
           `Wallet ${publicKey} address already has a dapp address on file for dapp '${dapp.publicKey}'. Use the update dapp address route instead.`,
