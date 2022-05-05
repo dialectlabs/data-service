@@ -93,6 +93,9 @@ export class SubscriberController {
           const subscriber: Subscriber = {
             resourceId: new PublicKey(wallet.publicKey || ''),
           };
+          console.log("--------");
+          console.log(wallet.dapp);
+          console.log(wallet.dapp?.metadata);
           wallet.address.type == 'email'
             ? (subscriber.email = wallet.address.value)
             : wallet.address.type == 'sms'
@@ -105,6 +108,10 @@ export class SubscriberController {
         }
       }
     });
+
+    console.log("^^dapp -- FOUND SUBS:\n");
+    console.log(subscribers);
+    console.log(dappPublicKey);
 
     return subscribers;
   }
