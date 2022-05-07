@@ -1,21 +1,10 @@
 // TODO: Enforce UUID format in some kind of middleware exception handling.
 // Consolidate exception handling into single wrapper
-import {
-  Body,
-  Controller,
-  Get,
-  HttpException,
-  HttpStatus,
-  Param,
-  Post,
-  Put,
-  UseGuards,
-} from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { PrismaService } from '../prisma/prisma.service';
 import { BasicAuthGuard } from 'src/auth/basic-auth.guard';
 import { PublicKey } from '@solana/web3.js';
-import { json } from 'stream/consumers';
 
 export interface Subscriber {
   resourceId: PublicKey;
@@ -34,10 +23,10 @@ export class SubscriberController {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-       Dapp Subscriber Addresses
-       Query all addresses for a given dapp and arrange by Subscriber
-       Returns addresses ONLY if verified and enabled.
-       */
+     Dapp Subscriber Addresses
+     Query all addresses for a given dapp and arrange by Subscriber
+     Returns addresses ONLY if verified and enabled.
+     */
   @Get(':dapp/subscribers')
   async get(@Param('dapp') dappPublicKey: string): Promise<Subscriber[]> {
     const subscribers: Subscriber[] = [];
@@ -50,27 +39,30 @@ export class SubscriberController {
         },
         dapp: {
           publicKey: dappPublicKey,
-        }
+        },
       },
       include: {
         address: true,
       },
     });
 
+    // TODO: fix n+1
     const results = await Promise.all(
-      subscriberDappAddresses.map(sda => sda.address).map(async (address) => {
-        const wallet = await this.prisma.wallet.findUnique({
-          where: { id: address.walletId },
-        });
+      subscriberDappAddresses
+        .map((sda) => sda.address)
+        .map(async (address) => {
+          const wallet = await this.prisma.wallet.findUnique({
+            where: { id: address.walletId },
+          });
 
-        const dapp = await this.prisma.dappAddress.findFirst({
-          where: {
-            addressId: address.id,
-          },
-        });
+          const dapp = await this.prisma.dappAddress.findFirst({
+            where: {
+              addressId: address.id,
+            },
+          });
 
-        return { ...wallet, address, dapp };
-      }),
+          return { ...wallet, address, dapp };
+        }),
     );
 
     results.forEach((wallet) => {
@@ -85,15 +77,18 @@ export class SubscriberController {
             : wallet.address.type == 'sms'
             ? (subscribers[idx].smsNumber = wallet.address.value)
             : wallet.address.type == 'telegram'
-            // @ts-ignore
-            ? (subscribers[idx].telegramId = wallet.dapp?.metadata?.telegram_chat_id || undefined)
+            ? (subscribers[idx].telegramId =
+                // TODO: fix
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                wallet.dapp?.metadata?.telegram_chat_id || undefined)
             : undefined;
         } else {
           // create with this address type
           const subscriber: Subscriber = {
             resourceId: new PublicKey(wallet.publicKey || ''),
           };
-          console.log("--------");
+          console.log('--------');
           console.log(wallet.dapp);
           console.log(wallet.dapp?.metadata);
           wallet.address.type == 'email'
@@ -101,15 +96,18 @@ export class SubscriberController {
             : wallet.address.type == 'sms'
             ? (subscriber.smsNumber = wallet.address.value)
             : wallet.address.type == 'telegram'
-            // @ts-ignore
-            ? (subscriber.telegramId = wallet.dapp?.metadata?.telegram_chat_id || undefined)
+            ? (subscriber.telegramId =
+                // TODO: fix
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                wallet.dapp?.metadata?.telegram_chat_id || undefined)
             : undefined;
           subscribers.push(subscriber);
         }
       }
     });
 
-    console.log("^^dapp -- FOUND SUBS:\n");
+    console.log('^^dapp -- FOUND SUBS:\n');
     console.log(subscribers);
     console.log(dappPublicKey);
 
