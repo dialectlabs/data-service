@@ -33,7 +33,7 @@ export class TelegramService {
     });
 
     if (dapps.length === 0) {
-      await ctx.reply('Dapp assosiated with this bot not registred');
+      await ctx.reply('Dapp associated with this bot not registered');
       return;
     }
 
@@ -47,7 +47,7 @@ export class TelegramService {
     });
 
     if (dappAddresses.length === 0) {
-      await ctx.reply('Not address asosiated with this Dapp');
+      await ctx.reply('Not address associatedА with this Dapp');
       return;
     }
 
