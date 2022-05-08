@@ -21,7 +21,7 @@ import {
   VerifyAddressDto,
   VerifySmsDto,
 } from './wallet.controller.dto';
-import { Wallet } from '@prisma/client';
+import { Prisma, Wallet } from '@prisma/client';
 import { DappService } from '../dapp/dapp.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { InjectWallet } from '../auth/auth.decorator';
@@ -150,10 +150,10 @@ export class WalletController {
     let address;
     if (!addressId && type && value) {
       /*
-                                                            Case 1: Create an address
-                                                      
-                                                            This is determined by there being no addressId in the payload.
-                                                            */
+      Case 1: Create an address
+
+      This is determined by there being no addressId in the payload.
+      */
       console.log('POST case 1: Creating an address...');
       /**
        * Generating 6 digit code to approve email
@@ -189,9 +189,9 @@ export class WalletController {
       }
     } else if (value) {
       /**
-             Case 2: Address exists and must be updated.
-             This is determined by there being an addressId and a value supplied.
-             */
+       Case 2: Address exists and must be updated.
+        This is determined by there being an addressId and a value supplied.
+        */
       // TODO: Ensure this can't be done by non-owner.
       console.log('POST case 2: Updating an address...');
       await this.prisma.address.updateMany({
@@ -215,8 +215,8 @@ export class WalletController {
         );
     } else {
       /*
-                                                                  Case 3: Address does not need to be created or updated.
-                                                                  */
+      Case 3: Address does not need to be created or updated.
+      */
       console.log('POST case 3: No address, create or update...');
       // This should be exactly 1 address. We use findMany to make prisma types happy.
       const addresses = await this.prisma.address.findMany({
@@ -231,7 +231,7 @@ export class WalletController {
           `Could not find address ${addressId} for wallet ${wallet.publicKey}. Check your inputs and try again.`,
           HttpStatus.BAD_REQUEST,
         );
-        
+
       // This should never happen. If it does something is wrong above.
       if (addresses.length > 1)
         throw new HttpException(
@@ -251,11 +251,28 @@ export class WalletController {
     let dappAddress;
     try {
       console.log(`${address.id}`);
+      /*
+      TODO: !!! This code assumes there is only one telegram bot, hence only one telegram_chat_id, created at the original /start event from telegram.service.ts.
+
+      TODO: !!! For future implementations where different dapps have different teelgram addresses, the act of enabling an existing (& verified address) for telegram involves the additional step of enabling the bot via a /start command, only after which the user may receive unprompted messages from the bot. To be solved.
+      */
+      const otherDappAddress = await this.prisma.dappAddress.findFirst({
+        where: {
+          addressId: address.id,
+          NOT: {
+            // We assume if it's not undefined then it has a telegram_chat_id
+            metadata: undefined,
+          },
+        }
+      });
+      // @ts-ignore
+      const metadata = otherDappAddress?.metadata?.telegram_chat_id || undefined; 
       dappAddress = await this.prisma.dappAddress.create({
         data: {
           enabled,
           dappId: dapp.id,
           addressId: address.id,
+          metadata,
         },
         include: {
           address: true,
@@ -266,8 +283,6 @@ export class WalletController {
       console.log('e', e);
       console.log({dapp});
       console.log({addressId});
-      const result = await this.prisma.dappAddress.findMany({});
-      console.log({result});
       // TODO add these exceptions to http response but don't throw
       if (e?.message?.includes('Unique constraint failed'))
         throw new HttpException(

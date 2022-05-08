@@ -58,6 +58,17 @@ export class PostDappAddressDto extends PutDappAddressDto {
     3. An address exists and does not need to be updated. Requires:
       - addressId
       - enabled
+
+    N.b.
+    TODO: !!! This code assumes there is only one telegram bot, hence only one telegram_chat_id, created at the original /start event from telegram.service.ts.
+
+    TODO: !!! For future implementations where different dapps have different teelgram addresses, the act of enabling an existing (& verified address) for telegram involves the additional step of enabling the bot via a /start command, only after which the user may receive unprompted messages from the bot. To be solved.
+
+    What I remember that we're actually sending:
+    - type
+    - enabled
+    but we can get the address id by:
+    - finding the address of type `type` on file for wallet public_key from the url
     */
   @IsIn(['wallet', 'email', 'sms', 'telegram'])
   readonly type!: string;
