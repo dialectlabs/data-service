@@ -266,7 +266,10 @@ export class WalletController {
         }
       });
       // @ts-ignore
-      const metadata = otherDappAddress?.metadata?.telegram_chat_id || undefined; 
+      const metadata = otherDappAddress?.metadata?.telegram_chat_id ? {
+        // @ts-ignore
+        telegram_chat_id: otherDappAddress?.metadata?.telegram_chat_id,
+      } : undefined; 
       dappAddress = await this.prisma.dappAddress.create({
         data: {
           enabled,
