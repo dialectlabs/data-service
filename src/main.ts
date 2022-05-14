@@ -33,8 +33,8 @@ async function bootstrap() {
 function configureSwagger(app: INestApplication) {
   if (process.env.ENVIRONMENT !== 'production') {
     const config = new DocumentBuilder()
-      .setTitle('Wallet address registry service')
-      .setDescription('Monitoring service API description')
+      .setTitle('Dialect Data Service')
+      .setDescription('Dialect Data Service')
       .setVersion('0.1')
       .addBearerAuth()
       .build();

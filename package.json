@@ -1,5 +1,5 @@
 {
-  "name": "@dialectlabs/wallet-address-registry-service",
+  "name": "@dialectlabs/data-service",
   "version": "0.1.0",
   "author": "dialectlabs",
   "private": false,
