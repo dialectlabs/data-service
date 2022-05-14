@@ -7,6 +7,56 @@ The `data-service` serves as both an off-chain data store and a set of APIs arou
 Dialect [Terms of Service](https://www.dialect.to/tos)
 Dialect [Privacy Policy](https://www.dialect.to/privacy)
 
+## Dialects & messaging
+
+### API
+
+All of these routes are authenticated using a signed message from the user's wallet.
+
+- `GET /dialects` — Get all dialects for a user.
+- `GET /dialects/:address` — Get a dialect by its address.
+- `POST /dialects` — Create a new dialect.
+  ```json
+  {
+    "members": [
+      {
+        "publicKey": "<public-key-1>",
+        "scopes": [true, true]
+      },
+      {
+        "publicKey": "<public-key-2>",
+        "scopes": [false, true]
+      }
+    ]
+  }
+  ```
+- `POST /dialects/:address/messages` — Create a new message in a dialect.
+  ```json
+  {
+    "text": "<text>"
+  }
+  ```
+
+### Data structures
+
+- `wallet` - A public key associated with a keypair.
+- `dialect` - A message thread.
+- `member` - A member of a thread, many-to-many with `wallet` & `dialect`.
+- `message` - A message, many-to-many with `member` & `dialect`.
+
+## Dapp notifications & subscriptions
+
+### API
+
+To fill in.
+
+### Data structures
+
+- `wallet` — A public key associated with a keypair.
+- `address` — A generalized notion of an address, e.g. wallet, email, telegram, sms, etc.
+- `dapp` — A generalized notion of a dapp that wishes to send notifications to addresses.
+- `dapp_address` — A single listing of an address being registered to receive notifications from a dapp. Many-to-many in `dapp`s & `address`es.
+
 ## Development
 
 ### Prerequisites

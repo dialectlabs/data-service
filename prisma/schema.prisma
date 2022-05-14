@@ -89,3 +89,44 @@ model DappAddress {
   @@unique([addressId, dappId])
   @@map("dapp_addresses")
 }
+
+model Dialect {
+  // generic columns
+  id String @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // columns
+  encrypted Boolean
+
+  // relations
+  members Member[]
+  messages Message[]
+}
+
+model Member {
+  // generic columns
+  id String @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // relations
+  dialectId String @map("dialect_id") @db.Uuid
+  dialect Dialect @relation(fields: [dialectId], references: [id])
+  messages Message[]
+}
+
+model Message {
+  // generic columns
+  id String @id @default(uuid()) @db.Uuid
+
+  // columns
+  timestamp DateTime @default(now())
+  text String
+
+  // relations
+  dialectId String @map("dialect_id") @db.Uuid
+  dialect Dialect @relation(fields: [dialectId], references: [id])
+  ownerId String @map("owner_id") @db.Uuid
+  owner Member @relation(fields: [ownerId], references: [id])
+}
