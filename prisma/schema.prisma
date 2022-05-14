@@ -21,15 +21,10 @@ model Wallet {
 
   // relations
   addresses Address[]
-  members   Member[]
 
   // meta
   @@map("wallets")
 }
-
-//
-// Notifications & Subscriptions
-//
 
 model Address {
   // generic columns
@@ -38,10 +33,10 @@ model Address {
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   // columns
-  type             String // e.g. 'email', 'telegram', 'sms', etc. TODO: Make this an enum, perhaps only at the server level, not db
-  value            String // e.g. 'chris@dialect.to', '@chrisoss', etc.
+  type     String // e.g. 'email', 'telegram', 'sms', etc. TODO: Make this an enum, perhaps only at the server level, not db
+  value    String // e.g. 'chris@dialect.to', '@chrisoss', etc.
   verificationCode String? @map("verification_code") // 6-digit number code
-  verified         Boolean @default(false)
+  verified Boolean @default(false)
 
   // relations
   walletId      String        @map("wallet_id") @db.Uuid
@@ -62,7 +57,7 @@ model Dapp {
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   // columns
-  publicKey   String  @unique @map("public_key")
+  publicKey String @unique @map("public_key")
   telegramKey String? @map("telegram_key")
 
   // relations
@@ -79,8 +74,8 @@ model DappAddress {
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   // columns
-  enabled  Boolean
-  metadata Json?
+  enabled   Boolean
+  metadata  Json?
 
   // relations
   addressId String  @map("address_id") @db.Uuid
@@ -95,51 +90,30 @@ model DappAddress {
   @@map("dapp_addresses")
 }
 
-//
-// Dialects
-//
-
 model Dialect {
   // generic columns
-  id        String   @id @default(uuid()) @db.Uuid
+  id String @id @default(uuid()) @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   // columns
-  publicKey String  @unique @map("public_key")
   encrypted Boolean
 
   // relations
-  members  Member[]
+  members Member[]
   messages Message[]
-
-  // meta
-  @@map("dialects")
 }
 
 model Member {
   // generic columns
-  id        String   @id @default(uuid()) @db.Uuid
+  id String @id @default(uuid()) @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
-  scopes Scope[]
-
   // relations
-  dialectId String    @map("dialect_id") @db.Uuid
-  dialect   Dialect   @relation(fields: [dialectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  walletId  String    @map("wallet_id") @db.Uuid
-  wallet    Wallet    @relation(fields: [walletId], references: [id])
-  messages  Message[]
-
-  // meta
-  @@unique([walletId, dialectId])
-  @@map("members")
-}
-
-enum Scope {
-  ADMIN
-  WRITE
+  dialectId String @map("dialect_id") @db.Uuid
+  dialect Dialect @relation(fields: [dialectId], references: [id])
+  messages Message[]
 }
 
 model Message {
@@ -148,15 +122,11 @@ model Message {
 
   // columns
   timestamp DateTime @default(now())
-  text      Bytes    @db.ByteA
+  text String
 
   // relations
-  dialectId String  @map("dialect_id") @db.Uuid
-  dialect   Dialect @relation(fields: [dialectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  // TODO: Should this be a wallet relation? E.g. persist past messages even if author is removed as a member.
-  memberId  String  @map("member_id") @db.Uuid
-  member    Member  @relation(fields: [memberId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  // meta
-  @@map("messages")
+  dialectId String @map("dialect_id") @db.Uuid
+  dialect Dialect @relation(fields: [dialectId], references: [id])
+  ownerId String @map("owner_id") @db.Uuid
+  owner Member @relation(fields: [ownerId], references: [id])
 }
