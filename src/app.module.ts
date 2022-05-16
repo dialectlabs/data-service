@@ -8,7 +8,15 @@ import { TelegramModule } from './telegram/telegram.module';
 import { SubscriberModule } from './subscriber/subscriber.module';
 
 @Module({
-  imports: [PrismaModule, WalletModule, DappModule, MailModule, SmsVerificationModule, TelegramModule, SubscriberModule],
+  imports: [
+    PrismaModule,
+    WalletModule,
+    DappModule,
+    MailModule,
+    SmsVerificationModule,
+    TelegramModule,
+    SubscriberModule,
+  ],
   providers: [],
 })
 export class AppModule {}

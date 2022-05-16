@@ -1,6 +1,10 @@
 import { Module } from '@nestjs/common';
 import { SendGridModule } from '@ntegral/nestjs-sendgrid';
-import { MailService } from './mail.service';
+import {
+  MailVerificationService,
+  NoopMailVerificationService,
+  SendGridMailVerificationService,
+} from './mail.service';
 
 @Module({
   imports: [
@@ -8,7 +12,16 @@ import { MailService } from './mail.service';
       apiKey: String(process.env.SENDGRID_KEY),
     }),
   ],
-  providers: [MailService],
-  exports: [MailService],
+  providers: [
+    {
+      provide: MailVerificationService,
+      useClass:
+        process.env.ENVIRONMENT === 'production' ||
+        (process.env.SENDGRID_EMAIL && process.env.SENDGRID_KEY)
+          ? SendGridMailVerificationService
+          : NoopMailVerificationService,
+    },
+  ],
+  exports: [MailVerificationService],
 })
 export class MailModule {}

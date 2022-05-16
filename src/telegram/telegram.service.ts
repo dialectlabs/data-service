@@ -1,9 +1,22 @@
-import { Wallet } from '@project-serum/anchor';
-import { Update, Ctx, Start, Help } from 'nestjs-telegraf';
+import { Ctx, Start, Update } from 'nestjs-telegraf';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Logger } from '@nestjs/common';
+
+export abstract class TelegramService {}
+
+export class NoopTelegramService extends TelegramService {
+  private readonly logger = new Logger(NoopTelegramService.name);
+
+  constructor() {
+    super();
+    this.logger.warn(
+      `Using ${NoopTelegramService.name} to send verification codes: real telegram bot not started`,
+    );
+  }
+}
 
 @Update()
-export class TelegramService {
+export class TelefrafTelegramService {
   constructor(private readonly prisma: PrismaService) {}
 
   @Start()
