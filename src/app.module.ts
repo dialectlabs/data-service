@@ -6,9 +6,11 @@ import { MailModule } from './mail/mail.module';
 import { SmsVerificationModule } from './sms/sms.module';
 import { TelegramModule } from './telegram/telegram.module';
 import { SubscriberModule } from './subscriber/subscriber.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot(),
     PrismaModule,
     WalletModule,
     DappModule,

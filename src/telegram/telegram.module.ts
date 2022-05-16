@@ -7,13 +7,14 @@ import {
   TelegramService,
 } from './telegram.service';
 
-const telegrafModules: DynamicModule[] = process.env.TELEGRAM_TOKEN
-  ? [
-      TelegrafModule.forRoot({
-        token: String(process.env.TELEGRAM_TOKEN),
-      }),
-    ]
-  : [];
+const telegrafModules: DynamicModule[] =
+  process.env.ENVIRONMENT === 'production' || process.env.TELEGRAM_TOKEN
+    ? [
+        TelegrafModule.forRoot({
+          token: String(process.env.TELEGRAM_TOKEN),
+        }),
+      ]
+    : [];
 
 @Module({
   imports: [PrismaModule, ...telegrafModules],
