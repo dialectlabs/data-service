@@ -1,6 +1,7 @@
 import { Ctx, Start, Update } from 'nestjs-telegraf';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Logger } from '@nestjs/common';
+import { Address } from '@prisma/client';
 
 export abstract class TelegramService {}
 
@@ -21,49 +22,41 @@ export class TelefrafTelegramService {
 
   @Start()
   async start(@Ctx() ctx: any) {
-    const addresses = await this.prisma.address.findMany({
-      orderBy: [{ updatedAt: 'desc' }],
-      where: {
-        value: ctx.update.message.from.username,
-        type: 'telegram',
-        verified: false,
-      },
-    });
-
-    if (!addresses[0]) {
+    const username = ctx.update.message.from.username;
+    const addresses = await this.findAllUserAddresses(username);
+    if (addresses.length === 0) {
       await ctx.reply(
-        "You're already receiving notifications or your wallet not attached",
+        'Your username is not registered in the system, please subscribe to notifications before using the bot.',
       );
       return;
     }
 
-    const dapps = await this.prisma.dapp.findMany({
-      where: {
-        telegramKey: {
-          contains: `${ctx.botInfo.id.toString()}:`,
-        },
-      },
-    });
+    const addressToBeVerified =
+      TelefrafTelegramService.findAddressToBeVerified(addresses);
+    if (!addressToBeVerified) {
+      await ctx.reply(
+        'Your username is already registered in the system and verified.',
+      );
+      return;
+    }
 
+    const dapps = await this.findDappsAssociatedWith(ctx.botInfo.id);
     if (dapps.length === 0) {
-      await ctx.reply('Dapp associated with this bot not registered');
+      await ctx.reply('Dapps associated with this bot not found.');
       return;
     }
 
     const dappIds = dapps.map((dapp) => dapp.id);
-
     const dappAddresses = await this.prisma.dappAddress.findMany({
       where: {
-        addressId: addresses[0].id,
+        addressId: addressToBeVerified.id,
         dappId: { in: dappIds },
       },
     });
-
     if (dappAddresses.length === 0) {
-      await ctx.reply('Not address associatedА with this Dapp');
+      await ctx.reply('Your username is not associated with any Dapp.');
       return;
     }
-
     const dappAddressIds = dappAddresses.map(
       (dappAddress) => dappAddress.addressId,
     );
@@ -81,7 +74,33 @@ export class TelefrafTelegramService {
     });
 
     await ctx.reply(
-      `Welcome to dialect.\nHere is your verification code: ${addresses[0].verificationCode}`,
+      `Welcome to dialect.\nHere is your verification code: ${addressToBeVerified.verificationCode}`,
     );
+  }
+
+  private findAllUserAddresses(username: string) {
+    return this.prisma.address.findMany({
+      orderBy: [{ updatedAt: 'desc' }],
+      where: {
+        value: username,
+        type: 'telegram',
+      },
+    });
+  }
+
+  private static findAddressToBeVerified(
+    addresses: Address[],
+  ): Address | undefined {
+    return addresses.filter(({ verified }) => !verified)[0];
+  }
+
+  private findDappsAssociatedWith(botId: any) {
+    return this.prisma.dapp.findMany({
+      where: {
+        telegramKey: {
+          contains: `${botId.toString()}:`,
+        },
+      },
+    });
   }
 }
