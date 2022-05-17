@@ -19,13 +19,12 @@ import {
   PostDappAddressDto,
   PutDappAddressDto,
   VerifyAddressDto,
-  VerifySmsDto,
 } from './wallet.controller.dto';
-import { Prisma, Wallet } from '@prisma/client';
+import { Wallet } from '@prisma/client';
 import { DappService } from '../dapp/dapp.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { InjectWallet } from '../auth/auth.decorator';
-import { MailService } from '../mail/mail.service';
+import { MailVerificationService } from '../mail/mail.service';
 import { generateVerificationCode } from 'src/utils';
 import { SmsVerificationService } from 'src/sms/sms.service';
 
@@ -38,14 +37,14 @@ export class WalletController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly dappService: DappService,
-    private readonly mailService: MailService,
+    private readonly mailService: MailVerificationService,
     private readonly smsVerificationService: SmsVerificationService,
   ) {}
 
   /**
-     Addresses
-     Delete an address. N.b. this will delete all corresponding dapp address configurations.
-     */
+   Addresses
+   Delete an address. N.b. this will delete all corresponding dapp address configurations.
+   */
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @Delete(':public_key/addresses/:id')
@@ -85,9 +84,9 @@ export class WalletController {
   }
 
   /**
-     Dapp Addresses
-     Get a list of addresses on file for a given dapp. N.b. this only returns the type (e.g. 'email'), and whether it's verified and enabled; it does *NOT* return the value (e.g. 'chris@dialect.to').
-     */
+   Dapp Addresses
+   Get a list of addresses on file for a given dapp. N.b. this only returns the type (e.g. 'email'), and whether it's verified and enabled; it does *NOT* return the value (e.g. 'chris@dialect.to').
+   */
   @Get(':public_key/dapps/:dapp/addresses')
   async get(
     @Param('public_key') publicKey: string,
@@ -103,14 +102,17 @@ export class WalletController {
       },
       include: {
         dappAddresses: true,
-      }
+      },
     });
     //@ts-ignore
     return addresses.map((address) => {
       // Filter for only the dapp addresses affiliated with this dapp.
-      const thisDappsAddresses = address.dappAddresses.filter(da => da.dappId === dapp.id);
-      console.log(thisDappsAddresses)
-      const thisDappsAddress = thisDappsAddresses.length > 0 && thisDappsAddresses[0] || null;
+      const thisDappsAddresses = address.dappAddresses.filter(
+        (da) => da.dappId === dapp.id,
+      );
+      console.log(thisDappsAddresses);
+      const thisDappsAddress =
+        (thisDappsAddresses.length > 0 && thisDappsAddresses[0]) || null;
       const id = thisDappsAddress?.id;
       const enabled = thisDappsAddress?.enabled || false;
       return {
@@ -125,14 +127,14 @@ export class WalletController {
   }
 
   /**
-     Create a new dapp address. N.b. this also handles the following cases for addresses:
+   Create a new dapp address. N.b. this also handles the following cases for addresses:
 
-     1. Create an address.
-     2. Update an address.
-     3. Neither create nor update an address.
+   1. Create an address.
+   2. Update an address.
+   3. Neither create nor update an address.
 
-     In all of the above, the dapp address is being created, hence the POST method type.
-     */
+   In all of the above, the dapp address is being created, hence the POST method type.
+   */
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @Post(':public_key/dapps/:dapp/addresses')
@@ -190,8 +192,8 @@ export class WalletController {
     } else if (value) {
       /**
        Case 2: Address exists and must be updated.
-        This is determined by there being an addressId and a value supplied.
-        */
+       This is determined by there being an addressId and a value supplied.
+       */
       // TODO: Ensure this can't be done by non-owner.
       console.log('POST case 2: Updating an address...');
       await this.prisma.address.updateMany({
@@ -235,18 +237,19 @@ export class WalletController {
       // This should never happen. If it does something is wrong above.
       if (addresses.length > 1)
         throw new HttpException(
-          `Found more than one address for type ${type} and wallet public key ${wallet.publicKey}`, HttpStatus.BAD_REQUEST,
+          `Found more than one address for type ${type} and wallet public key ${wallet.publicKey}`,
+          HttpStatus.BAD_REQUEST,
         );
 
       address = addresses[0];
-      console.log({address});
+      console.log({ address });
       // console.log({addresses});
     }
     if (type === 'wallet' && wallet.publicKey != value)
-        throw new HttpException(
-          `Value should be equal to wallet ${wallet.publicKey}. Check your inputs and try again.`,
-          HttpStatus.BAD_REQUEST,
-        );
+      throw new HttpException(
+        `Value should be equal to wallet ${wallet.publicKey}. Check your inputs and try again.`,
+        HttpStatus.BAD_REQUEST,
+      );
 
     let dappAddress;
     try {
@@ -263,13 +266,15 @@ export class WalletController {
             // We assume if it's not undefined then it has a telegram_chat_id
             metadata: undefined,
           },
-        }
+        },
       });
       // @ts-ignore
-      const metadata = otherDappAddress?.metadata?.telegram_chat_id ? {
-        // @ts-ignore
-        telegram_chat_id: otherDappAddress?.metadata?.telegram_chat_id,
-      } : undefined; 
+      const metadata = otherDappAddress?.metadata?.telegram_chat_id
+        ? {
+            // @ts-ignore
+            telegram_chat_id: otherDappAddress?.metadata?.telegram_chat_id,
+          }
+        : undefined;
       dappAddress = await this.prisma.dappAddress.create({
         data: {
           enabled,
@@ -284,8 +289,8 @@ export class WalletController {
       });
     } catch (e: any) {
       console.log('e', e);
-      console.log({dapp});
-      console.log({addressId});
+      console.log({ dapp });
+      console.log({ addressId });
       // TODO add these exceptions to http response but don't throw
       if (e?.message?.includes('Unique constraint failed'))
         throw new HttpException(
@@ -309,13 +314,13 @@ export class WalletController {
   }
 
   /**
-     Update a dapp address. N.b. this also handles the following cases for addresses:
+   Update a dapp address. N.b. this also handles the following cases for addresses:
 
-     1. Update an address.
-     2. Don't update an address.
+   1. Update an address.
+   2. Don't update an address.
 
-     In all of the above, the dapp address is being created, hence the POST method type.
-     */
+   In all of the above, the dapp address is being created, hence the POST method type.
+   */
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @Put(':public_key/dapps/:dapp/addresses/:id')

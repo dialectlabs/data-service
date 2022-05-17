@@ -28,4 +28,34 @@ export class DappService {
       );
     return dapp_;
   }
+
+  async findDappAdresses(dappPublicKey: string) {
+    try {
+      new PublicKey(dappPublicKey);
+    } catch (e: any) {
+      throw new HttpException(
+        `Invalid format dapp public_key ${dappPublicKey}, please check your inputs and try again.`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    return this.prisma.dappAddress.findMany({
+      where: {
+        enabled: true,
+        address: {
+          verified: true,
+        },
+        dapp: {
+          publicKey: dappPublicKey,
+        },
+      },
+      include: {
+        dapp: true,
+        address: {
+          include: {
+            wallet: true,
+          },
+        },
+      },
+    });
+  }
 }
