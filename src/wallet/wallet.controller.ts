@@ -21,7 +21,7 @@ import {
   VerifyAddressDto,
 } from './wallet.controller.dto';
 import { DappService } from '../dapp/dapp.service';
-import { AuthGuard } from '../auth/auth.guard';
+import { AuthenticationGuard } from '../auth/authentication.guard';
 import { MailVerificationService } from '../mail/mail.service';
 import { generateVerificationCode } from 'src/utils';
 import { SmsVerificationService } from 'src/sms/sms.service';
@@ -44,7 +44,7 @@ export class WalletController {
    Addresses
    Delete an address. N.b. this will delete all corresponding dapp address configurations.
    */
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthenticationGuard)
   @ApiBearerAuth()
   @Delete(':public_key/addresses/:id')
   async delete(
@@ -135,7 +135,7 @@ export class WalletController {
 
    In all of the above, the dapp address is being created, hence the POST method type.
    */
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthenticationGuard)
   @ApiBearerAuth()
   @Post(':public_key/dapps/:dapp/addresses')
   async post(
@@ -322,7 +322,7 @@ export class WalletController {
 
    In all of the above, the dapp address is being created, hence the POST method type.
    */
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthenticationGuard)
   @ApiBearerAuth()
   @Put(':public_key/dapps/:dapp/addresses/:id')
   async put(
@@ -441,7 +441,7 @@ export class WalletController {
     };
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthenticationGuard)
   @ApiBearerAuth()
   @Post(':public_key/dapps/:dapp/addresses/:id/verify')
   async verify(
@@ -507,7 +507,7 @@ export class WalletController {
     };
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthenticationGuard)
   @ApiBearerAuth()
   @Post(':public_key/dapps/:dapp/addresses/:id/resendCode')
   async resendCode(

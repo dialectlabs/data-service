@@ -22,7 +22,7 @@ function base64ToUint8(string: string): Uint8Array {
 const bearerHeader = 'Bearer ';
 
 @Injectable()
-export class AuthGuard implements CanActivate {
+export class AuthenticationGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
 
@@ -39,7 +39,7 @@ export class AuthGuard implements CanActivate {
       'public_key',
     );
     const authToken = authHeader.slice(bearerHeader.length).trim();
-    AuthGuard.checkTokenValid(authToken, singerPublicKey);
+    AuthenticationGuard.checkTokenValid(authToken, singerPublicKey);
     return true;
   }
 
