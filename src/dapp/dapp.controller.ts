@@ -1,12 +1,14 @@
 // TODO: Enforce UUID format in some kind of middleware exception handling.
 // Consolidate exception handling into single wrapper
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { SubscriberDto } from './dapp.controller.dto';
 import _ from 'lodash';
 import { DappService } from './dapp.service';
 import { DappAddress, Prisma } from '@prisma/client';
 import { PublicKeyValidationPipe } from '../middleware/public-key-validation-pipe';
+import { AuthGuard } from '../auth/auth.guard';
+import { DappAuthorizationGuard } from '../auth/dapp-authorization.guard';
 
 @ApiTags('Dapps')
 @Controller({
@@ -22,6 +24,7 @@ export class DappController {
    Returns addresses ONLY if verified and enabled.
    */
   @Get(':dapp/subscribers')
+  @UseGuards(AuthGuard, DappAuthorizationGuard)
   async get(
     @Param('dapp', PublicKeyValidationPipe) dappPublicKey: string,
   ): Promise<SubscriberDto[]> {
