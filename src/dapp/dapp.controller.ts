@@ -1,15 +1,13 @@
 // TODO: Enforce UUID format in some kind of middleware exception handling.
 // Consolidate exception handling into single wrapper
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { BasicAuthGuard } from 'src/auth/basic-auth.guard';
 import { SubscriberDto } from './dapp.controller.dto';
 import _ from 'lodash';
 import { DappService } from './dapp.service';
 import { DappAddress, Prisma } from '@prisma/client';
 
 @ApiTags('Dapps')
-@UseGuards(BasicAuthGuard)
 @Controller({
   path: 'dapps',
   version: '0',
