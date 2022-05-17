@@ -8,7 +8,7 @@ import { DappService } from './dapp.service';
 import { DappAddress, Prisma } from '@prisma/client';
 import { PublicKeyValidationPipe } from '../middleware/public-key-validation-pipe';
 import { AuthenticationGuard } from '../auth/authentication.guard';
-import { DappAuthorizationGuard } from '../auth/dapp-authorization.guard';
+import { DappAuthenticationGuard } from '../auth/dapp-authentication.guard';
 
 @ApiTags('Dapps')
 @Controller({
@@ -24,7 +24,7 @@ export class DappController {
    Returns addresses ONLY if verified and enabled.
    */
   @Get(':public_key/subscribers')
-  @UseGuards(AuthenticationGuard, DappAuthorizationGuard)
+  @UseGuards(AuthenticationGuard, DappAuthenticationGuard)
   async get(
     @Param('public_key', PublicKeyValidationPipe) dappPublicKey: string,
   ): Promise<SubscriberDto[]> {

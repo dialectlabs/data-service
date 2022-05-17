@@ -9,7 +9,7 @@ import { checkPublicKeyIsValid } from '../middleware/public-key-validation-pipe'
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
-export class DappAuthorizationGuard implements CanActivate {
+export class DappAuthenticationGuard implements CanActivate {
   constructor(private readonly prisma: PrismaService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -28,7 +28,7 @@ export class DappAuthorizationGuard implements CanActivate {
 
     if (!dapp) {
       throw new UnauthorizedException(
-        `Operation is not authorized for dApp ${publicKey.toBase58()}.`,
+        `DApp ${publicKey.toBase58()} not registered in the system.`,
       );
     }
     return true;
