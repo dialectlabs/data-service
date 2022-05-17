@@ -6,6 +6,7 @@ import { SubscriberDto } from './dapp.controller.dto';
 import _ from 'lodash';
 import { DappService } from './dapp.service';
 import { DappAddress, Prisma } from '@prisma/client';
+import { PublicKeyValidationPipe } from '../middleware/public-key-validation-pipe';
 
 @ApiTags('Dapps')
 @Controller({
@@ -21,7 +22,9 @@ export class DappController {
    Returns addresses ONLY if verified and enabled.
    */
   @Get(':dapp/subscribers')
-  async get(@Param('dapp') dappPublicKey: string): Promise<SubscriberDto[]> {
+  async get(
+    @Param('dapp', PublicKeyValidationPipe) dappPublicKey: string,
+  ): Promise<SubscriberDto[]> {
     const dappAddresses = await this.dappService.findDappAdresses(
       dappPublicKey,
     );
