@@ -20,7 +20,7 @@ export class DappAuthorizationGuard implements CanActivate {
       'public_key',
     );
 
-    const dapp = this.prisma.dapp.findUnique({
+    const dapp = await this.prisma.dapp.findUnique({
       where: {
         publicKey: publicKey.toBase58(),
       },

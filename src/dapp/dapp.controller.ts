@@ -23,10 +23,10 @@ export class DappController {
    Query all addresses for a given dapp and arrange by Subscriber
    Returns addresses ONLY if verified and enabled.
    */
-  @Get(':dapp/subscribers')
+  @Get(':public_key/subscribers')
   @UseGuards(AuthGuard, DappAuthorizationGuard)
   async get(
-    @Param('dapp', PublicKeyValidationPipe) dappPublicKey: string,
+    @Param('public_key', PublicKeyValidationPipe) dappPublicKey: string,
   ): Promise<SubscriberDto[]> {
     const dappAddresses = await this.dappService.findDappAdresses(
       dappPublicKey,
