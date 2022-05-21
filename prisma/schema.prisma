@@ -110,6 +110,8 @@ model Member {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
+  scopes Boolean[] // [admin, write]
+
   // relations
   dialectId String @map("dialect_id") @db.Uuid
   dialect Dialect @relation(fields: [dialectId], references: [id])
@@ -122,7 +124,7 @@ model Message {
 
   // columns
   timestamp DateTime @default(now())
-  text String
+  text Bytes @db.ByteA
 
   // relations
   dialectId String @map("dialect_id") @db.Uuid

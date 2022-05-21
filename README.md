@@ -13,11 +13,12 @@ Dialect [Privacy Policy](https://www.dialect.to/privacy)
 
 All of these routes are authenticated using a signed message from the user's wallet.
 
-- `GET /dialects` — Get all dialects for a user.
+- `GET /dialects` — Get all dialects for a wallet.
 - `GET /dialects/:address` — Get a dialect by its address.
 - `POST /dialects` — Create a new dialect.
   ```json
   {
+    "encrypted": true,
     "members": [
       {
         "publicKey": "<public-key-1>",
@@ -36,6 +37,7 @@ All of these routes are authenticated using a signed message from the user's wal
     "text": "<text>"
   }
   ```
+- `DELETE /dialects/:address` — Delete a dialect.
 
 ### Data structures
 
