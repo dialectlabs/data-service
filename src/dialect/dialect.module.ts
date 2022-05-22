@@ -1,12 +1,15 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
 import { DialectController } from './dialect.controller';
-import { DialectService } from './dialect.service';
-import { WalletModule } from '../wallet/wallet.module';
+import { LoggerMiddleware } from '../middleware/logger.middleware';
 
 @Module({
-  imports: [PrismaModule, WalletModule],
-  providers: [DialectService],
+  imports: [PrismaModule],
+  exports: [],
   controllers: [DialectController],
 })
-export class DialectModule {}
+export class DialectModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes('*');
+  }
+}

@@ -1,36 +1,41 @@
-import {
-  MemberedAndMessagedDialect,
-  MemberedMessage,
-  WalletedMember,
-} from './dialect.prisma';
-import {
-  ArrayMaxSize,
-  ArrayMinSize,
-  ArrayNotEmpty,
-  ArrayUnique,
-  IsArray,
-  IsBoolean,
-  IsOptional,
-  ValidateNested,
-} from 'class-validator';
-import { Type } from 'class-transformer';
-import { IsPublicKey } from '../middleware/public-key-validation';
+import { Dialect, Member, Message, Wallet } from '@prisma/client';
 
 //
-// DTO types
+// Extended query types. TODO: Move to types or utils file
 //
+
+export type WalletedMember = Member & {
+  wallet: Wallet;
+};
+
+export type MemberedMessage = Message & {
+  member: WalletedMember;
+};
+
+export type MemberedAndMessagedDialect = Dialect & {
+  members: WalletedMember[];
+  messages: MemberedMessage[];
+};
+
+export type DialectedMember = Member & {
+  dialect: MemberedAndMessagedDialect;
+};
 
 export class DialectAccountDto {
   readonly publicKey!: string;
   readonly dialect!: DialectDto;
 
-  static fromDialect(dialect: MemberedAndMessagedDialect): DialectAccountDto {
+  static fromDialect(dialect: MemberedAndMessagedDialect) {
     return {
       publicKey: dialect.publicKey,
       dialect: DialectDto.fromDialect(dialect),
-    };
+    } as DialectAccountDto;
   }
-}
+};
+
+//
+// DTO types
+//
 
 export class DialectDto {
   readonly members!: MemberDto[];
@@ -40,79 +45,39 @@ export class DialectDto {
   readonly lastMessageTimestamp!: number;
   readonly encrypted!: boolean;
 
-  static fromDialect(dialect: MemberedAndMessagedDialect): DialectDto {
+  static fromDialect(dialect: MemberedAndMessagedDialect) {
     return {
       members: dialect.members.map(MemberDto.fromMember),
       messages: dialect.messages.map(MessageDto.fromMessage),
       nextMessageIdx: 0,
-      lastMessageTimestamp: dialect.updatedAt.getTime(),
+      lastMessageTimestamp: 0,
       encrypted: dialect.encrypted,
-    };
+    } as DialectDto;
   }
-}
+};
 
 export class MemberDto {
   readonly publicKey!: string;
-  readonly scopes!: MemberScopeDto[];
+  readonly scopes!: [boolean, boolean];
 
-  static fromMember(member: WalletedMember): MemberDto {
+  static fromMember(member: WalletedMember) {
     return {
       publicKey: member.wallet.publicKey,
-      scopes: member.scopes.map((it) => MemberScopeDto[it]),
-    };
+      scopes: member.scopes,
+    } as MemberDto;
   }
-}
+};
 
 export class MessageDto {
   readonly owner!: string;
-  readonly text!: number[];
+  readonly text!: Buffer;
   readonly timestamp!: number;
 
-  static fromMessage(message: MemberedMessage): MessageDto {
+  static fromMessage(message: MemberedMessage) {
     return {
       owner: message.member.wallet.publicKey,
-      text: Array.from(new Uint8Array(message.text)),
+      text: message.text,
       timestamp: message.timestamp.getTime(),
-    };
+    } as MessageDto;
   }
-}
-
-export enum MemberScopeDto {
-  ADMIN = 'ADMIN',
-  WRITE = 'WRITE',
-}
-
-export class CreateDialectCommandDto {
-  @IsArray()
-  @ArrayNotEmpty()
-  @ArrayMaxSize(2)
-  @ArrayMinSize(2)
-  @ArrayUnique((member) => member.publicKey)
-  @ValidateNested({ each: true })
-  @Type(() => DialectMemberDto)
-  readonly members!: DialectMemberDto[];
-  @IsBoolean()
-  readonly encrypted!: boolean;
-}
-
-export class DialectMemberDto {
-  @IsPublicKey()
-  readonly publicKey!: string;
-  @IsArray()
-  @ArrayNotEmpty()
-  @ArrayUnique((scope) => scope)
-  readonly scopes!: MemberScopeDto[];
-}
-
-export class SendMessageCommandDto {
-  @IsArray()
-  @ArrayNotEmpty()
-  @ArrayMaxSize(1024)
-  readonly text!: number[];
-}
-
-export class FindDialectQuery {
-  @IsPublicKey()
-  @IsOptional()
-  readonly memberPublicKey?: string;
-}
+};
