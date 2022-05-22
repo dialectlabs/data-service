@@ -21,10 +21,15 @@ model Wallet {
 
   // relations
   addresses Address[]
+  members Member[]
 
   // meta
   @@map("wallets")
 }
+
+//
+// Notifications & Subscriptions
+//
 
 model Address {
   // generic columns
@@ -90,6 +95,10 @@ model DappAddress {
   @@map("dapp_addresses")
 }
 
+//
+// Dialects
+//
+
 model Dialect {
   // generic columns
   id String @id @default(uuid()) @db.Uuid
@@ -97,11 +106,15 @@ model Dialect {
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   // columns
+  publicKey String @unique @map("public_key")
   encrypted Boolean
 
   // relations
   members Member[]
   messages Message[]
+
+ // meta
+  @@map("dialects")
 }
 
 model Member {
@@ -115,7 +128,12 @@ model Member {
   // relations
   dialectId String @map("dialect_id") @db.Uuid
   dialect Dialect @relation(fields: [dialectId], references: [id])
+  walletId String @map("wallet_id") @db.Uuid
+  wallet Wallet @relation(fields: [walletId], references: [id])
   messages Message[]
+
+  // meta
+  @@map("members")
 }
 
 model Message {
@@ -129,6 +147,10 @@ model Message {
   // relations
   dialectId String @map("dialect_id") @db.Uuid
   dialect Dialect @relation(fields: [dialectId], references: [id])
-  ownerId String @map("owner_id") @db.Uuid
-  owner Member @relation(fields: [ownerId], references: [id])
+  // TODO: Should this be a wallet relation? E.g. persist past messages even if author is removed as a member.
+  memberId String @map("member_id") @db.Uuid
+  member Member @relation(fields: [memberId], references: [id])
+
+  // meta
+  @@map("messages")
 }
