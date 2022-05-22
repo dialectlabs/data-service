@@ -3,7 +3,6 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { getDialectProgramAddress } from '@dialectlabs/web3';
 import { PublicKey } from '@solana/web3.js';
 import { PostMemberDto } from './dialect.controller.dto';
-import { Wallet } from '@project-serum/anchor';
 import { HttpException, HttpStatus } from '@nestjs/common';
 
 //
@@ -126,8 +125,10 @@ async function postMember(prisma: PrismaService, dialect: Dialect, member: PostM
     data: {
       dialectId: dialect.id,
       walletId: wallet.id,
+      scopes: member.scopes,
     }
-  })
+  });
+  return member_;
 };
 
 export async function postMessage(prisma: PrismaService, member: Member, dialectId: string, text: Buffer): Promise<Message> {
