@@ -88,7 +88,7 @@ export class DialectController {
     return DialectAccountDto.fromDialect(dialect);
   }
 
-  // Post a message
+  // Post a message to a dialect
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @Post('/:public_key/messages')
