@@ -28,7 +28,7 @@ const DIALECTED_MEMBER_INCLUDES = {
       members: {
         include: {
           wallet: true,
-        }
+        },
       },
       // TODO: Limit to last N messages, sorted.
       messages: {
@@ -68,7 +68,7 @@ export async function findDialect(prisma: PrismaService, wallet: Wallet, dialect
       walletId: wallet.id,
       dialect: {
         publicKey: dialectPublicKey,
-      }
+      },
     },
     include: DIALECTED_MEMBER_INCLUDES,
   });

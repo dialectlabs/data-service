@@ -13,7 +13,7 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PrismaService } from '../prisma/prisma.service';
 import {DialectAccountDto } from './dialect.controller.dto';
-import { DialectedMember, findAllDialects, MemberedAndMessagedDialect } from './dialect.prisma';
+import { DialectedMember, findAllDialects, findDialect, MemberedAndMessagedDialect } from './dialect.prisma';
 import { Dialect, Wallet } from '@prisma/client';
 
 import { AuthGuard } from '../auth/auth.guard';
@@ -58,4 +58,16 @@ export class DialectController {
     //   } as DialectAccountDto
     // ));
   }
-}
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @Get('/:public_key')
+  async getDialect(
+    @Param('public_key') dialectPublicKey: string,
+    @InjectWallet() wallet: Wallet,
+  ) {
+    const dialect = await findDialect(this.prisma, wallet, dialectPublicKey);
+    if (!dialect) throw new HttpException(`No Dialect with public key ${dialectPublicKey} found for wallet ${wallet.publicKey}.`, HttpStatus.NOT_FOUND);
+    return DialectAccountDto.fromDialect(dialect);
+  }
+};
