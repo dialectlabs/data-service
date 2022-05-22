@@ -60,3 +60,7 @@ export class MessageDto {
     } as MessageDto;
   }
 };
+
+export class PostMessageDto {
+  readonly text!: Buffer;
+};

@@ -12,12 +12,13 @@ import {
   } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PrismaService } from '../prisma/prisma.service';
-import {DialectAccountDto } from './dialect.controller.dto';
-import { DialectedMember, findAllDialects, findDialect, MemberedAndMessagedDialect } from './dialect.prisma';
-import { Dialect, Wallet } from '@prisma/client';
+import {DialectAccountDto, PostMessageDto } from './dialect.controller.dto';
+import { findAllDialects, findDialect, postMessage } from './dialect.prisma';
+import { Wallet } from '@prisma/client';
 
 import { AuthGuard } from '../auth/auth.guard';
 import { InjectWallet } from '../auth/auth.decorator';
+import { MemberInstance } from 'twilio/lib/rest/api/v2010/account/queue/member';
 
 @ApiTags('Dialects')
 @Controller({
@@ -70,4 +71,29 @@ export class DialectController {
     if (!dialect) throw new HttpException(`No Dialect with public key ${dialectPublicKey} found for wallet ${wallet.publicKey}.`, HttpStatus.NOT_FOUND);
     return DialectAccountDto.fromDialect(dialect);
   }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @Post('/:public_key/messages')
+  async postMessage(
+    @Param('public_key') dialectPublicKey: string,
+    @InjectWallet() wallet: Wallet,
+    @Body() postMessageDto: PostMessageDto,
+  ) {
+    // TODO: Reduce includes in this query since less is needed.
+    const text = postMessageDto.text;
+    if (!text) throw new HttpException(`Must supply text to the body of this request. Text supplied ${text}`, HttpStatus.BAD_REQUEST);
+    let dialect = await findDialect(this.prisma, wallet, dialectPublicKey);
+    if (!dialect) throw new HttpException(`No Dialect with public key ${dialectPublicKey} found for wallet ${wallet.publicKey}, cannot post new message.`, HttpStatus.BAD_REQUEST);
+    // Assert wallet has write privileges
+    const member = dialect.members.find(m => m.wallet.publicKey === wallet.publicKey && m.scopes[1]);
+    if (!member) throw new HttpException(`Wallet ${wallet.publicKey} does not have write privileges to Dialect ${dialect.publicKey}.`, HttpStatus.UNAUTHORIZED);
+    await postMessage(this.prisma, member, dialect.id, text);
+
+    // We know the dialect exists at this point
+    dialect = await findDialect(this.prisma, wallet, dialectPublicKey);
+    return DialectAccountDto.fromDialect(dialect!);
+  }
+
+
 };
