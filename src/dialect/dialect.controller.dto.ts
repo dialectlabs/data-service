@@ -1,25 +1,8 @@
-import { Dialect, Member, Message, Wallet } from '@prisma/client';
+import { MemberedAndMessagedDialect, MemberedMessage, WalletedMember } from "./dialect.prisma";
 
 //
-// Extended query types. TODO: Move to types or utils file
+// DTO types
 //
-
-export type WalletedMember = Member & {
-  wallet: Wallet;
-};
-
-export type MemberedMessage = Message & {
-  member: WalletedMember;
-};
-
-export type MemberedAndMessagedDialect = Dialect & {
-  members: WalletedMember[];
-  messages: MemberedMessage[];
-};
-
-export type DialectedMember = Member & {
-  dialect: MemberedAndMessagedDialect;
-};
 
 export class DialectAccountDto {
   readonly publicKey!: string;
@@ -32,10 +15,6 @@ export class DialectAccountDto {
     } as DialectAccountDto;
   }
 };
-
-//
-// DTO types
-//
 
 export class DialectDto {
   readonly members!: MemberDto[];
