@@ -61,6 +61,16 @@ export class MessageDto {
   }
 };
 
+class PostMemberDto {
+  readonly publicKey!: string;
+  readonly scopes!: [boolean, boolean];
+}
+
+export class PostDialectDto {
+  readonly members!: [PostMemberDto, PostMemberDto];
+  readonly encrypted!: boolean;
+}
+
 export class PostMessageDto {
   readonly text!: Buffer;
 };
