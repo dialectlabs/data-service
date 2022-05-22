@@ -12,11 +12,12 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PrismaService } from '../prisma/prisma.service';
 import {DialectAccountDto, DialectDto, PostDialectDto, PostMessageDto } from './dialect.controller.dto';
-import { findAllDialects, findDialect, postDialect, postMessage } from './dialect.prisma';
+import { deleteDialect, findAllDialects, findDialect, postDialect, postMessage } from './dialect.prisma';
 import { Wallet } from '@prisma/client';
 
 import { AuthGuard } from '../auth/auth.guard';
 import { InjectWallet } from '../auth/auth.decorator';
+import { publicKey } from '@project-serum/anchor/dist/cjs/utils';
 
 @ApiTags('Dialects')
 @Controller({
@@ -113,4 +114,14 @@ export class DialectController {
   }
 
   // TODO: Delete a dialect
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @Delete('/:public_key')
+  async delete(
+    @Param('public_key') dialectPublicKey: string,
+    @InjectWallet() wallet: Wallet,
+  ) {
+    await deleteDialect(this.prisma, wallet, dialectPublicKey);
+    return HttpStatus.NO_CONTENT;
+  }
 };

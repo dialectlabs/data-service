@@ -61,7 +61,7 @@ export class MessageDto {
   }
 };
 
-class PostMemberDto {
+export class PostMemberDto {
   readonly publicKey!: string;
   readonly scopes!: [boolean, boolean];
 }
