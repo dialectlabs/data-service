@@ -1,4 +1,4 @@
-import { Dialect, Member, Message, prisma, Wallet } from '@prisma/client';
+import { Dialect, Member, Message, Wallet } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 //
@@ -76,4 +76,17 @@ export async function findDialect(prisma: PrismaService, wallet: Wallet, dialect
   if (members.length > 0) throw new Error('More than one member found for a wallet and dialect public key.');
   const dialect = members[0].dialect;
   return dialect;
+}
+
+export async function postMessage(prisma: PrismaService, member: Member, dialectId: string, text: Buffer): Promise<Message> {
+  const timestamp = new Date()
+  const message = await prisma.message.create({
+    data: {
+      dialectId,
+      memberId: member.id,
+      text,
+      timestamp,
+    },
+  });
+  return message;
 }
