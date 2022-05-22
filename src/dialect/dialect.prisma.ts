@@ -1,5 +1,10 @@
 import { Dialect, Member, Message, Wallet } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { getDialectProgramAddress } from '@dialectlabs/web3';
+import { PublicKey } from '@solana/web3.js';
+import { PostMemberDto } from './dialect.controller.dto';
+import { Wallet } from '@project-serum/anchor';
+import { HttpException, HttpStatus } from '@nestjs/common';
 
 //
 // Extended query types. TODO: Move to types or utils file
@@ -77,6 +82,53 @@ export async function findDialect(prisma: PrismaService, wallet: Wallet, dialect
   const dialect = members[0].dialect;
   return dialect;
 }
+
+export async function postDialect(prisma: PrismaService, members: [PostMemberDto, PostMemberDto], encrypted: boolean): Promise<Dialect> {
+  // Validate member public keys, upsert wallets
+  members.map(async (m: PostMemberDto) => {
+    try {
+      new PublicKey(m.publicKey);
+    } catch {
+      // TODO: Make custom error class here, use HttpException in controller instead.
+      throw new HttpException(`Cannot create dialect. Member supplied with invalid public key ${m.publicKey}.`, HttpStatus.BAD_REQUEST);
+    }
+  });
+  const wallets = await Promise.all(members.map(async (m: PostMemberDto): Promise<Wallet> => {
+    const wallet = await prisma.wallet.upsert({
+      where: {
+        publicKey: m.publicKey,
+      },
+      create: {
+        publicKey: m.publicKey,
+      },
+      update: {}
+    });
+    return wallet;
+  }));
+
+  const [ publicKey, nonce ]: [PublicKey, number] = await getDialectProgramAddress(program, members);
+  const dialect = await prisma.dialect.create({
+    data: {
+      publicKey: publicKey.toBase58(),
+      encrypted,
+    },
+  });
+
+  await Promise.all(members.map(async (m: PostMemberDto, idx: number) => {
+    await postMember(prisma, dialect, m, wallets[idx]);
+  }));
+
+  return dialect;
+};
+
+async function postMember(prisma: PrismaService, dialect: Dialect, member: PostMemberDto, wallet: Wallet): Promise<Member> {
+  const member_ = await prisma.member.create({
+    data: {
+      dialectId: dialect.id,
+      walletId: wallet.id,
+    }
+  })
+};
 
 export async function postMessage(prisma: PrismaService, member: Member, dialectId: string, text: Buffer): Promise<Message> {
   const timestamp = new Date()

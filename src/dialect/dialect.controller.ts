@@ -7,18 +7,16 @@ import {
     HttpStatus,
     Param,
     Post,
-    Put,
     UseGuards,
   } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PrismaService } from '../prisma/prisma.service';
-import {DialectAccountDto, PostMessageDto } from './dialect.controller.dto';
-import { findAllDialects, findDialect, postMessage } from './dialect.prisma';
+import {DialectAccountDto, DialectDto, PostDialectDto, PostMessageDto } from './dialect.controller.dto';
+import { findAllDialects, findDialect, postDialect, postMessage } from './dialect.prisma';
 import { Wallet } from '@prisma/client';
 
 import { AuthGuard } from '../auth/auth.guard';
 import { InjectWallet } from '../auth/auth.decorator';
-import { MemberInstance } from 'twilio/lib/rest/api/v2010/account/queue/member';
 
 @ApiTags('Dialects')
 @Controller({
@@ -30,6 +28,23 @@ export class DialectController {
     private readonly prisma: PrismaService,
   ) {}
 
+  // Create a new dialect
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @Post('/')
+  async post(
+    @InjectWallet() wallet: Wallet,
+    @Body() postDialectDto: PostDialectDto,
+  ) {
+    // TODO: Parse & verify inputs, incl. that wallet is a member
+    const dialect_ = await postDialect(this.prisma, postDialectDto.members, postDialectDto.encrypted);
+
+    // We know the dialect exists now.
+    const dialect = await findDialect(this.prisma, wallet, dialect_.publicKey);
+    return DialectAccountDto.fromDialect(dialect!);
+  }
+
+  // Get all dialects for a wallet
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @Get('/')
@@ -60,6 +75,7 @@ export class DialectController {
     // ));
   }
 
+  // Get a dialect by its public key
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @Get('/:public_key')
@@ -72,6 +88,7 @@ export class DialectController {
     return DialectAccountDto.fromDialect(dialect);
   }
 
+  // Post a message
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @Post('/:public_key/messages')
@@ -95,5 +112,5 @@ export class DialectController {
     return DialectAccountDto.fromDialect(dialect!);
   }
 
-
+  // TODO: Delete a dialect
 };
