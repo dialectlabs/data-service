@@ -61,12 +61,12 @@ export class MessageDto {
   readonly text!: Buffer;
   readonly timestamp!: number;
 
-  static fromMessage(message: MemberedMessage) {
+  static fromMessage(message: MemberedMessage): MessageDto {
     return {
       owner: message.member.wallet.publicKey,
       text: message.text,
       timestamp: message.timestamp.getTime(),
-    } as MessageDto;
+    };
   }
 }
 
@@ -76,7 +76,8 @@ export class PostMemberDto {
 }
 
 export class PostDialectDto {
-  readonly members!: [PostMemberDto, PostMemberDto];
+  // TODO: check size === 2
+  readonly members!: PostMemberDto[];
   readonly encrypted!: boolean;
 }
 

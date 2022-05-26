@@ -94,7 +94,7 @@ export async function findDialect(
 
 export async function postDialect(
   prisma: PrismaService,
-  members: [PostMemberDto, PostMemberDto],
+  members: PostMemberDto[],
   encrypted: boolean,
 ): Promise<Dialect> {
   // Validate member public keys, upsert wallets

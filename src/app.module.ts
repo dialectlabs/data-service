@@ -6,6 +6,7 @@ import { MailModule } from './mail/mail.module';
 import { SmsVerificationModule } from './sms/sms.module';
 import { TelegramModule } from './telegram/telegram.module';
 import { ConfigModule } from '@nestjs/config';
+import { DialectModule } from './dialect/dialect.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ConfigModule } from '@nestjs/config';
     MailModule,
     SmsVerificationModule,
     TelegramModule,
+    DialectModule,
   ],
   providers: [],
 })
