@@ -1,7 +1,6 @@
 import { Dialect, Member, Message, Wallet } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { getDialectProgramAddress } from '@dialectlabs/web3';
-import { PublicKey } from '@solana/web3.js';
+import { Keypair, PublicKey } from '@solana/web3.js';
 import { PostMemberDto } from './dialect.controller.dto';
 import { HttpException, HttpStatus } from '@nestjs/common';
 
@@ -129,10 +128,11 @@ export async function postDialect(
   // const [publicKey, nonce]: [PublicKey, number] =
   //   await getDialectProgramAddress(program, members);
 
-  const [ publicKey, nonce ]: [PublicKey, number] = await getDialectProgramAddress(program, members);
+  const pk = Keypair.generate().publicKey;
+
   const dialect = await prisma.dialect.create({
     data: {
-      publicKey: publicKey.toBase58(),
+      publicKey: pk.toBase58(),
       encrypted,
     },
   });
