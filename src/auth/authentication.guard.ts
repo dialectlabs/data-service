@@ -8,9 +8,9 @@ import {
 import { PublicKey } from '@solana/web3.js';
 import nacl from 'tweetnacl';
 import { Request } from 'express';
-import { requireValidPublicKey } from '../middleware/public-key-validation';
+import { requireValidPublicKey } from '../middleware/public-key-validation-pipe';
 import { PrismaService } from '../prisma/prisma.service';
-import { Auth } from '@dialectlabs/sdk';
+import { Token } from '@dialectlabs/sdk';
 import { Principal } from './authenticaiton.decorator';
 
 function base64ToUint8(string: string): Uint8Array {
@@ -56,19 +56,20 @@ export class AuthenticationGuard implements CanActivate {
 
   private validateTokenV2(authToken: string) {
     const token = this.parseTokenV2(authToken);
-    if (!Auth.tokens.isSignatureValid(token)) {
+    if (!Token.isSignatureValid(token)) {
       throw new UnauthorizedException('Signature verification failed');
     }
-    if (Auth.tokens.isExpired(token)) {
+    if (Token.isExpired(token)) {
       throw new UnauthorizedException('Token expired');
     }
+    console.log(token);
     const publicKey = requireValidPublicKey(token.body.sub);
     return this.upsertWallet(publicKey);
   }
 
   private parseTokenV2(authToken: string) {
     try {
-      return Auth.tokens.parse(authToken);
+      return Token.parse(authToken);
     } catch (e) {
       this.logger.log(
         `Failed to parse token ${authToken}\n ${JSON.stringify(e)}`,

@@ -23,12 +23,12 @@ import {
   postDialect,
   postMessage,
 } from './dialect.prisma';
-import { Wallet } from '@prisma/client';
-
-import { AuthGuard } from '../auth/auth.guard';
-import { InjectWallet } from '../auth/auth.decorator';
+import { AuthenticationGuard } from '../auth/authentication.guard';
+import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 
 @ApiTags('Dialects')
+@ApiBearerAuth()
+@UseGuards(AuthenticationGuard)
 @Controller({
   path: 'dialects',
   version: '0',
@@ -37,11 +37,9 @@ export class DialectController {
   constructor(private readonly prisma: PrismaService) {}
 
   // Create a new dialect
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth()
   @Post('/')
   async post(
-    @InjectWallet() wallet: Wallet,
+    @AuthPrincipal() { wallet }: Principal,
     @Body() postDialectDto: PostDialectDto,
   ) {
     // TODO: Parse & verify inputs, incl. that wallet is a member
@@ -56,11 +54,8 @@ export class DialectController {
     return DialectAccountDto.fromDialect(dialect!);
   }
 
-  // Get all dialects for a wallet
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth()
   @Get('/')
-  async get(@InjectWallet() wallet: Wallet) {
+  async get(@AuthPrincipal() { wallet }: Principal) {
     const dialects = await findAllDialects(this.prisma, wallet);
     return dialects.map(DialectAccountDto.fromDialect);
     // TODO: rm once above class methods are tested.
@@ -85,13 +80,10 @@ export class DialectController {
     // ));
   }
 
-  // Get a dialect by its public key
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth()
   @Get('/:public_key')
   async getDialect(
     @Param('public_key') dialectPublicKey: string,
-    @InjectWallet() wallet: Wallet,
+    @AuthPrincipal() { wallet }: Principal,
   ) {
     const dialect = await findDialect(this.prisma, wallet, dialectPublicKey);
     if (!dialect)
@@ -102,13 +94,10 @@ export class DialectController {
     return DialectAccountDto.fromDialect(dialect);
   }
 
-  // Post a message to a dialect
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth()
   @Post('/:public_key/messages')
   async postMessage(
     @Param('public_key') dialectPublicKey: string,
-    @InjectWallet() wallet: Wallet,
+    @AuthPrincipal() { wallet }: Principal,
     @Body() postMessageDto: PostMessageDto,
   ) {
     // TODO: Reduce includes in this query since less is needed.
@@ -140,13 +129,10 @@ export class DialectController {
     return DialectAccountDto.fromDialect(dialect!);
   }
 
-  // TODO: Delete a dialect
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth()
   @Delete('/:public_key')
   async delete(
     @Param('public_key') dialectPublicKey: string,
-    @InjectWallet() wallet: Wallet,
+    @AuthPrincipal() { wallet }: Principal,
   ) {
     await deleteDialect(this.prisma, wallet, dialectPublicKey);
     return HttpStatus.NO_CONTENT;

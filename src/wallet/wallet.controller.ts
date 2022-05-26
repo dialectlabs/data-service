@@ -25,7 +25,7 @@ import { AuthenticationGuard } from '../auth/authentication.guard';
 import { MailVerificationService } from '../mail/mail.service';
 import { generateVerificationCode } from 'src/utils';
 import { SmsVerificationService } from 'src/sms/sms.service';
-import { PublicKeyValidationPipe } from '../middleware/public-key-validation';
+import { PublicKeyValidationPipe } from '../middleware/public-key-validation-pipe';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 
 @ApiTags('Wallets')
@@ -123,7 +123,6 @@ export class WalletController {
         verified: address.verified,
         dapp: dapp.publicKey,
         enabled,
-        value: wallet ?? address.value,
       };
     });
   }
@@ -173,7 +172,6 @@ export class WalletController {
             value,
             walletId: wallet.id,
             verificationCode: code,
-            verified: type === 'wallet',
           },
         });
       } catch (e: any) {
@@ -314,7 +312,6 @@ export class WalletController {
       verified: dappAddress.address.verified,
       dapp: dapp.publicKey,
       enabled: dappAddress.enabled,
-      value: dappAddress.address.value,
     };
   }
 
@@ -363,9 +360,6 @@ export class WalletController {
         where: {
           id: addressId,
           walletId: wallet.id,
-          NOT: {
-            type: 'wallet',
-          },
         },
         data: {
           value,
@@ -445,7 +439,6 @@ export class WalletController {
       verified: dappAddress.address.verified,
       dapp: dappAddress.dapp.publicKey,
       enabled: dappAddress.enabled,
-      value: dappAddress.address.value,
     };
   }
 

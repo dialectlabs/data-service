@@ -1,4 +1,4 @@
-import { NodeDialectWalletAdapter } from '@dialectlabs/sdk';
+import { EmbeddedWalletAdapter } from '@dialectlabs/sdk';
 
 (async () => {
   const tokenTTLMinutes = 180;
@@ -8,7 +8,7 @@ import { NodeDialectWalletAdapter } from '@dialectlabs/sdk';
   const dateEncoded = new TextEncoder().encode(
     btoa(JSON.stringify(expirationTime)),
   );
-  const wallet = NodeDialectWalletAdapter.create();
+  const wallet = EmbeddedWalletAdapter.create();
 
   const signature = await wallet.signMessage(dateEncoded);
 
