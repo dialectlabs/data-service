@@ -1,15 +1,13 @@
 import {
-  BadRequestException,
   CanActivate,
   ExecutionContext,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { PublicKey } from '@solana/web3.js';
 import nacl from 'tweetnacl';
 import { Request } from 'express';
-import { Wallet } from '@prisma/client';
+import { checkPublicKeyIsValid } from '../middleware/public-key-validation-pipe';
 
 function base64ToUint8(string: string): Uint8Array {
   return new Uint8Array(
@@ -20,16 +18,13 @@ function base64ToUint8(string: string): Uint8Array {
       }),
   );
 }
+
 const bearerHeader = 'Bearer ';
 
 @Injectable()
-export class AuthGuard implements CanActivate {
-  constructor(private readonly prisma: PrismaService) {}
-
+export class AuthenticationGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context
-      .switchToHttp()
-      .getRequest<Request & { wallet: Wallet }>();
+    const request = context.switchToHttp().getRequest<Request>();
 
     const authHeader = request.headers.authorization;
     if (!authHeader) {
@@ -39,23 +34,13 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('Invalid authorization token');
     }
 
-    const singerPublicKey = AuthGuard.requireValidPublicKey(
+    const singerPublicKey = checkPublicKeyIsValid(
       request.params.public_key,
+      'public_key',
     );
     const authToken = authHeader.slice(bearerHeader.length).trim();
-    AuthGuard.checkTokenValid(authToken, singerPublicKey);
-    request.wallet = await this.upsertWallet(singerPublicKey);
+    AuthenticationGuard.checkTokenValid(authToken, singerPublicKey);
     return true;
-  }
-
-  private static requireValidPublicKey(publicKey: string) {
-    try {
-      return new PublicKey(publicKey);
-    } catch (e: any) {
-      throw new BadRequestException(
-        `Invalid format wallet public_key ${publicKey}, please check your inputs and try again.`,
-      );
-    }
   }
 
   private static checkTokenValid(
@@ -108,17 +93,5 @@ export class AuthGuard implements CanActivate {
     } catch (e: any) {
       throw new UnauthorizedException('Signature verification failed');
     }
-  }
-
-  private upsertWallet(publicKey: PublicKey) {
-    return this.prisma.wallet.upsert({
-      where: {
-        publicKey: publicKey.toBase58(),
-      },
-      create: {
-        publicKey: publicKey.toBase58(),
-      },
-      update: {},
-    });
   }
 }

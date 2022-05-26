@@ -2,14 +2,15 @@
 // Consolidate exception handling into single wrapper
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { BasicAuthGuard } from 'src/auth/basic-auth.guard';
 import { SubscriberDto } from './dapp.controller.dto';
 import _ from 'lodash';
 import { DappService } from './dapp.service';
 import { DappAddress, Prisma } from '@prisma/client';
+import { PublicKeyValidationPipe } from '../middleware/public-key-validation-pipe';
+import { AuthenticationGuard } from '../auth/authentication.guard';
+import { DappAuthenticationGuard } from '../auth/dapp-authentication.guard';
 
 @ApiTags('Dapps')
-@UseGuards(BasicAuthGuard)
 @Controller({
   path: 'dapps',
   version: '0',
@@ -22,8 +23,11 @@ export class DappController {
    Query all addresses for a given dapp and arrange by Subscriber
    Returns addresses ONLY if verified and enabled.
    */
-  @Get(':dapp/subscribers')
-  async get(@Param('dapp') dappPublicKey: string): Promise<SubscriberDto[]> {
+  @Get(':public_key/subscribers')
+  @UseGuards(AuthenticationGuard, DappAuthenticationGuard)
+  async get(
+    @Param('public_key', PublicKeyValidationPipe) dappPublicKey: string,
+  ): Promise<SubscriberDto[]> {
     const dappAddresses = await this.dappService.findDappAdresses(
       dappPublicKey,
     );

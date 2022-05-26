@@ -20,13 +20,12 @@ import {
   PutDappAddressDto,
   VerifyAddressDto,
 } from './wallet.controller.dto';
-import { Wallet } from '@prisma/client';
 import { DappService } from '../dapp/dapp.service';
-import { AuthGuard } from '../auth/auth.guard';
-import { InjectWallet } from '../auth/auth.decorator';
+import { AuthenticationGuard } from '../auth/authentication.guard';
 import { MailVerificationService } from '../mail/mail.service';
 import { generateVerificationCode } from 'src/utils';
 import { SmsVerificationService } from 'src/sms/sms.service';
+import { PublicKeyValidationPipe } from '../middleware/public-key-validation-pipe';
 
 @ApiTags('Wallets')
 @Controller({
@@ -45,14 +44,14 @@ export class WalletController {
    Addresses
    Delete an address. N.b. this will delete all corresponding dapp address configurations.
    */
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthenticationGuard)
   @ApiBearerAuth()
   @Delete(':public_key/addresses/:id')
   async delete(
-    @Param('public_key') publicKey: string,
+    @Param('public_key', PublicKeyValidationPipe) publicKey: string,
     @Param('id') id: string,
-    @InjectWallet() wallet: Wallet,
   ) {
+    const wallet = await this.upsertWallet(publicKey);
     // TODO: Resolve return type
     // First enforce that the address is owned by the requesting public key.
     const addresses = await this.prisma.address.findMany({
@@ -89,10 +88,11 @@ export class WalletController {
    */
   @Get(':public_key/dapps/:dapp/addresses')
   async get(
-    @Param('public_key') publicKey: string,
-    @Param('dapp') dappPublicKey: string,
+    @Param('public_key', PublicKeyValidationPipe) publicKey: string,
+    @Param('dapp', PublicKeyValidationPipe) dappPublicKey: string,
   ): Promise<DappAddressDto[]> {
     const dapp = await this.dappService.lookupDapp(dappPublicKey);
+    const wallet = await this.upsertWallet(publicKey);
     // Query for all addresses for a wallet
     const addresses = await this.prisma.address.findMany({
       where: {
@@ -135,16 +135,17 @@ export class WalletController {
 
    In all of the above, the dapp address is being created, hence the POST method type.
    */
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthenticationGuard)
   @ApiBearerAuth()
   @Post(':public_key/dapps/:dapp/addresses')
   async post(
-    @Param('public_key') publicKey: string,
-    @Param('dapp') dappPublicKey: string,
-    @InjectWallet() wallet: Wallet,
+    @Param('public_key', PublicKeyValidationPipe) publicKey: string,
+    @Param('dapp', PublicKeyValidationPipe) dappPublicKey: string,
     @Body() postDappAddressDto: PostDappAddressDto,
   ): Promise<DappAddressDto> {
     const dapp = await this.dappService.lookupDapp(dappPublicKey);
+    const wallet = await this.upsertWallet(publicKey);
+
     const addressId = postDappAddressDto.addressId;
     const type = postDappAddressDto.type;
     const value = postDappAddressDto.value;
@@ -321,17 +322,17 @@ export class WalletController {
 
    In all of the above, the dapp address is being created, hence the POST method type.
    */
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthenticationGuard)
   @ApiBearerAuth()
   @Put(':public_key/dapps/:dapp/addresses/:id')
   async put(
     @Param('id') id: string,
-    @Param('public_key') publicKey: string,
-    @Param('dapp') dappPublicKey: string,
-    @InjectWallet() wallet: Wallet,
+    @Param('public_key', PublicKeyValidationPipe) publicKey: string,
+    @Param('dapp', PublicKeyValidationPipe) dappPublicKey: string,
     @Body() putDappAddressDto: PutDappAddressDto,
   ): Promise<DappAddressDto> {
     await this.dappService.lookupDapp(dappPublicKey);
+    const wallet = await this.upsertWallet(publicKey);
 
     const addressId = putDappAddressDto.addressId;
     const value = putDappAddressDto.value;
@@ -440,17 +441,17 @@ export class WalletController {
     };
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthenticationGuard)
   @ApiBearerAuth()
   @Post(':public_key/dapps/:dapp/addresses/:id/verify')
   async verify(
     @Param('id') id: string,
-    @Param('public_key') publicKey: string,
-    @Param('dapp') dappPublicKey: string,
-    @InjectWallet() wallet: Wallet,
+    @Param('public_key', PublicKeyValidationPipe) publicKey: string,
+    @Param('dapp', PublicKeyValidationPipe) dappPublicKey: string,
     @Body() verifyAddressDto: VerifyAddressDto,
   ): Promise<any> {
     const dapp = await this.dappService.lookupDapp(dappPublicKey);
+    const wallet = await this.upsertWallet(publicKey);
 
     const address = await this.prisma.address.findUnique({
       where: { id: verifyAddressDto.addressId },
@@ -506,16 +507,16 @@ export class WalletController {
     };
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthenticationGuard)
   @ApiBearerAuth()
   @Post(':public_key/dapps/:dapp/addresses/:id/resendCode')
   async resendCode(
     @Param('id') id: string,
-    @Param('public_key') publicKey: string,
-    @Param('dapp') dappPublicKey: string,
-    @InjectWallet() wallet: Wallet,
+    @Param('public_key', PublicKeyValidationPipe) publicKey: string,
+    @Param('dapp', PublicKeyValidationPipe) dappPublicKey: string,
     @Body() dAppAddressDto: DappAddressDto,
   ): Promise<any> {
+    const wallet = await this.upsertWallet(publicKey);
     if (!dAppAddressDto.addressId) {
       throw new HttpException(
         `An addressId (${dAppAddressDto.addressId}) must be supplied.`,
@@ -550,5 +551,17 @@ export class WalletController {
     } else if (address.type == 'sms') {
       this.smsVerificationService.sendVerificationCode(address.value, code);
     }
+  }
+
+  private upsertWallet(publicKey: string) {
+    return this.prisma.wallet.upsert({
+      where: {
+        publicKey,
+      },
+      create: {
+        publicKey,
+      },
+      update: {},
+    });
   }
 }
