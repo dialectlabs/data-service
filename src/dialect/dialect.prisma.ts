@@ -48,7 +48,10 @@ const DIALECTED_MEMBER_INCLUDES = {
   },
 };
 
-export async function findAllDialects(prisma: PrismaService, wallet: Wallet): Promise<MemberedAndMessagedDialect[]> {
+export async function findAllDialects(
+  prisma: PrismaService,
+  wallet: Wallet,
+): Promise<MemberedAndMessagedDialect[]> {
   // Fetch dialects for member. We do this via the members since includes are trivial.
   const members: DialectedMember[] = await prisma.member.findMany({
     where: {
@@ -62,11 +65,16 @@ export async function findAllDialects(prisma: PrismaService, wallet: Wallet): Pr
     .map((m: DialectedMember) => m.dialect)
     .filter(
       (dialect: Dialect, idx: number, dialects_: Dialect[]) =>
-      dialects_.indexOf(dialect) === idx);
+        dialects_.indexOf(dialect) === idx,
+    );
   return dialects;
 }
 
-export async function findDialect(prisma: PrismaService, wallet: Wallet, dialectPublicKey: string): Promise<MemberedAndMessagedDialect | null> {
+export async function findDialect(
+  prisma: PrismaService,
+  wallet: Wallet,
+  dialectPublicKey: string,
+): Promise<MemberedAndMessagedDialect | null> {
   const members: DialectedMember[] = await prisma.member.findMany({
     where: {
       walletId: wallet.id,
@@ -77,33 +85,49 @@ export async function findDialect(prisma: PrismaService, wallet: Wallet, dialect
     include: DIALECTED_MEMBER_INCLUDES,
   });
   if (members.length == 0) return null;
-  if (members.length > 0) throw new Error('More than one member found for a wallet and dialect public key.');
+  if (members.length > 0)
+    throw new Error(
+      'More than one member found for a wallet and dialect public key.',
+    );
   const dialect = members[0].dialect;
   return dialect;
 }
 
-export async function postDialect(prisma: PrismaService, members: [PostMemberDto, PostMemberDto], encrypted: boolean): Promise<Dialect> {
+export async function postDialect(
+  prisma: PrismaService,
+  members: [PostMemberDto, PostMemberDto],
+  encrypted: boolean,
+): Promise<Dialect> {
   // Validate member public keys, upsert wallets
   members.map(async (m: PostMemberDto) => {
     try {
       new PublicKey(m.publicKey);
     } catch {
       // TODO: Make custom error class here, use HttpException in controller instead.
-      throw new HttpException(`Cannot create dialect. Member supplied with invalid public key ${m.publicKey}.`, HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        `Cannot create dialect. Member supplied with invalid public key ${m.publicKey}.`,
+        HttpStatus.BAD_REQUEST,
+      );
     }
   });
-  const wallets = await Promise.all(members.map(async (m: PostMemberDto): Promise<Wallet> => {
-    const wallet = await prisma.wallet.upsert({
-      where: {
-        publicKey: m.publicKey,
-      },
-      create: {
-        publicKey: m.publicKey,
-      },
-      update: {}
-    });
-    return wallet;
-  }));
+  const wallets = await Promise.all(
+    members.map(async (m: PostMemberDto): Promise<Wallet> => {
+      const wallet = await prisma.wallet.upsert({
+        where: {
+          publicKey: m.publicKey,
+        },
+        create: {
+          publicKey: m.publicKey,
+        },
+        update: {},
+      });
+      return wallet;
+    }),
+  );
+
+  // TODO: implement
+  // const [publicKey, nonce]: [PublicKey, number] =
+  //   await getDialectProgramAddress(program, members);
 
   const [ publicKey, nonce ]: [PublicKey, number] = await getDialectProgramAddress(program, members);
   const dialect = await prisma.dialect.create({
@@ -113,26 +137,38 @@ export async function postDialect(prisma: PrismaService, members: [PostMemberDto
     },
   });
 
-  await Promise.all(members.map(async (m: PostMemberDto, idx: number) => {
-    await postMember(prisma, dialect, m, wallets[idx]);
-  }));
+  await Promise.all(
+    members.map(async (m: PostMemberDto, idx: number) => {
+      await postMember(prisma, dialect, m, wallets[idx]);
+    }),
+  );
 
   return dialect;
-};
+}
 
-async function postMember(prisma: PrismaService, dialect: Dialect, member: PostMemberDto, wallet: Wallet): Promise<Member> {
+async function postMember(
+  prisma: PrismaService,
+  dialect: Dialect,
+  member: PostMemberDto,
+  wallet: Wallet,
+): Promise<Member> {
   const member_ = await prisma.member.create({
     data: {
       dialectId: dialect.id,
       walletId: wallet.id,
       scopes: member.scopes,
-    }
+    },
   });
   return member_;
-};
+}
 
-export async function postMessage(prisma: PrismaService, member: Member, dialectId: string, text: Buffer): Promise<Message> {
-  const timestamp = new Date()
+export async function postMessage(
+  prisma: PrismaService,
+  member: Member,
+  dialectId: string,
+  text: Buffer,
+): Promise<Message> {
+  const timestamp = new Date();
   const message = await prisma.message.create({
     data: {
       dialectId,
@@ -144,13 +180,30 @@ export async function postMessage(prisma: PrismaService, member: Member, dialect
   return message;
 }
 
-export async function deleteDialect(prisma: PrismaService, wallet: Wallet, publicKey: string): Promise<void> {
+export async function deleteDialect(
+  prisma: PrismaService,
+  wallet: Wallet,
+  publicKey: string,
+): Promise<void> {
   const dialect = await findDialect(prisma, wallet, publicKey);
-  if (!dialect) throw new HttpException(`No Dialect ${publicKey} found for Wallet ${wallet.publicKey}, cannot delete.`, HttpStatus.BAD_REQUEST);
-  if (!dialect.members.some((m: WalletedMember) => m.wallet.publicKey === wallet.publicKey && m.scopes[1])) throw new HttpException(`Wallet ${wallet.publicKey} does not have admin privileges, cannot delete Dialect.`, HttpStatus.UNAUTHORIZED);
+  if (!dialect)
+    throw new HttpException(
+      `No Dialect ${publicKey} found for Wallet ${wallet.publicKey}, cannot delete.`,
+      HttpStatus.BAD_REQUEST,
+    );
+  if (
+    !dialect.members.some(
+      (m: WalletedMember) =>
+        m.wallet.publicKey === wallet.publicKey && m.scopes[1],
+    )
+  )
+    throw new HttpException(
+      `Wallet ${wallet.publicKey} does not have admin privileges, cannot delete Dialect.`,
+      HttpStatus.UNAUTHORIZED,
+    );
   await prisma.dialect.delete({
     where: {
       id: dialect.id,
-    }
+    },
   });
 }

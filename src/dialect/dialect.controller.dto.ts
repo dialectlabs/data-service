@@ -1,4 +1,8 @@
-import { MemberedAndMessagedDialect, MemberedMessage, WalletedMember } from "./dialect.prisma";
+import {
+  MemberedAndMessagedDialect,
+  MemberedMessage,
+  WalletedMember,
+} from './dialect.prisma';
 
 //
 // DTO types
@@ -14,7 +18,7 @@ export class DialectAccountDto {
       dialect: DialectDto.fromDialect(dialect),
     } as DialectAccountDto;
   }
-};
+}
 
 export class DialectDto {
   readonly members!: MemberDto[];
@@ -33,11 +37,16 @@ export class DialectDto {
       encrypted: dialect.encrypted,
     } as DialectDto;
   }
-};
+}
+
+export enum MemberScopeDto {
+  Admin = 'ADMIN',
+  Write = 'WRITE',
+}
 
 export class MemberDto {
   readonly publicKey!: string;
-  readonly scopes!: [boolean, boolean];
+  readonly scopes!: MemberScopeDto[];
 
   static fromMember(member: WalletedMember) {
     return {
@@ -45,7 +54,7 @@ export class MemberDto {
       scopes: member.scopes,
     } as MemberDto;
   }
-};
+}
 
 export class MessageDto {
   readonly owner!: string;
@@ -59,11 +68,11 @@ export class MessageDto {
       timestamp: message.timestamp.getTime(),
     } as MessageDto;
   }
-};
+}
 
 export class PostMemberDto {
   readonly publicKey!: string;
-  readonly scopes!: [boolean, boolean];
+  readonly scopes!: MemberScopeDto[];
 }
 
 export class PostDialectDto {
@@ -73,4 +82,4 @@ export class PostDialectDto {
 
 export class PostMessageDto {
   readonly text!: Buffer;
-};
+}
