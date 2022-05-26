@@ -9,12 +9,12 @@ import { PublicKey } from '@solana/web3.js';
 @Injectable()
 export class PublicKeyValidationPipe implements PipeTransform<string, string> {
   transform(value: string, metadata: ArgumentMetadata): string {
-    checkPublicKeyIsValid(value, metadata.data);
+    requireValidPublicKey(value, metadata.data);
     return value;
   }
 }
 
-export function checkPublicKeyIsValid(value: string, parameter?: string) {
+export function requireValidPublicKey(value: string, parameter?: string) {
   try {
     return new PublicKey(value);
   } catch (e: any) {

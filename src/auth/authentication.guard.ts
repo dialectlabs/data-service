@@ -2,12 +2,16 @@ import {
   CanActivate,
   ExecutionContext,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { PublicKey } from '@solana/web3.js';
 import nacl from 'tweetnacl';
 import { Request } from 'express';
-import { checkPublicKeyIsValid } from '../middleware/public-key-validation-pipe';
+import { requireValidPublicKey } from '../middleware/public-key-validation-pipe';
+import { PrismaService } from '../prisma/prisma.service';
+import { Token } from '@dialectlabs/sdk';
+import { Principal } from './authenticaiton.decorator';
 
 function base64ToUint8(string: string): Uint8Array {
   return new Uint8Array(
@@ -23,9 +27,58 @@ const bearerHeader = 'Bearer ';
 
 @Injectable()
 export class AuthenticationGuard implements CanActivate {
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<Request>();
+  private readonly logger = new Logger(AuthenticationGuard.name);
 
+  constructor(private readonly prisma: PrismaService) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest<Request & Principal>();
+    const authToken = AuthenticationGuard.getAuthToken(request);
+    // TODO: remove token v1 support after migration to SDK
+    if (AuthenticationGuard.isTokenV1(authToken)) {
+      const wallet = await this.validateTokenV1(request, authToken);
+      request.wallet = wallet;
+      return true;
+    }
+    const wallet = await this.validateTokenV2(authToken);
+    request.wallet = wallet;
+    return true;
+  }
+
+  private validateTokenV1(request: Request, authToken: string) {
+    const singerPublicKey = requireValidPublicKey(
+      request.params.public_key,
+      'public_key',
+    );
+    AuthenticationGuard.checkTokenValid(authToken, singerPublicKey);
+    return this.upsertWallet(singerPublicKey);
+  }
+
+  private validateTokenV2(authToken: string) {
+    const token = this.parseTokenV2(authToken);
+    if (!Token.isSignatureValid(token)) {
+      throw new UnauthorizedException('Signature verification failed');
+    }
+    if (Token.isExpired(token)) {
+      throw new UnauthorizedException('Token expired');
+    }
+    console.log(token);
+    const publicKey = requireValidPublicKey(token.body.sub);
+    return this.upsertWallet(publicKey);
+  }
+
+  private parseTokenV2(authToken: string) {
+    try {
+      return Token.parse(authToken);
+    } catch (e) {
+      this.logger.log(
+        `Failed to parse token ${authToken}\n ${JSON.stringify(e)}`,
+      );
+      throw new UnauthorizedException('Invalid token');
+    }
+  }
+
+  private static getAuthToken(request: Request) {
     const authHeader = request.headers.authorization;
     if (!authHeader) {
       throw new UnauthorizedException('No Authorization header');
@@ -33,14 +86,12 @@ export class AuthenticationGuard implements CanActivate {
     if (!authHeader.startsWith(bearerHeader)) {
       throw new UnauthorizedException('Invalid authorization token');
     }
+    return authHeader.slice(bearerHeader.length).trim();
+  }
 
-    const singerPublicKey = checkPublicKeyIsValid(
-      request.params.public_key,
-      'public_key',
-    );
-    const authToken = authHeader.slice(bearerHeader.length).trim();
-    AuthenticationGuard.checkTokenValid(authToken, singerPublicKey);
-    return true;
+  private static isTokenV1(authToken: string) {
+    // old format: ${timestamp}.${signature}
+    return authToken.split('.').length == 2;
   }
 
   private static checkTokenValid(
@@ -93,5 +144,17 @@ export class AuthenticationGuard implements CanActivate {
     } catch (e: any) {
       throw new UnauthorizedException('Signature verification failed');
     }
+  }
+
+  private upsertWallet(publicKey: PublicKey) {
+    return this.prisma.wallet.upsert({
+      where: {
+        publicKey: publicKey.toBase58(),
+      },
+      create: {
+        publicKey: publicKey.toBase58(),
+      },
+      update: {},
+    });
   }
 }
