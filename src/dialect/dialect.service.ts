@@ -1,0 +1,124 @@
+import { PrismaService } from '../prisma/prisma.service';
+import {
+  ForbiddenException,
+  Injectable,
+  UnprocessableEntityException,
+} from '@nestjs/common';
+import {
+  DIALECT_INCLUDES,
+  DIALECTED_MEMBER_INCLUDES,
+  DialectedMember,
+  MemberedAndMessagedDialect,
+} from './dialect.prisma';
+import { Dialect, Member, Wallet } from '@prisma/client';
+import {
+  CreateDialectCommandDto,
+  DialectMemberDto,
+  MemberScopeDto,
+} from './dialect.controller.dto';
+import { PublicKey } from '@solana/web3.js';
+import { WalletService } from '../wallet/wallet.service';
+import { DialectAddressProvider } from './dialect-address-provider';
+import _ from 'lodash';
+
+@Injectable()
+export class DialectService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly walletService: WalletService,
+  ) {}
+
+  async findAll(wallet: Wallet): Promise<MemberedAndMessagedDialect[]> {
+    // Fetch dialects for member. We do this via the members since includes are trivial.
+    const members: DialectedMember[] = await this.prisma.member.findMany({
+      where: {
+        walletId: wallet.id,
+      },
+      include: DIALECTED_MEMBER_INCLUDES,
+    });
+    // TODO: confirm dialects are already unique & rm filter.
+    return members
+      .map((m: DialectedMember) => m.dialect)
+      .filter(
+        (dialect: Dialect, idx: number, dialects_: Dialect[]) =>
+          dialects_.indexOf(dialect) === idx,
+      );
+  }
+
+  async create(
+    command: CreateDialectCommandDto,
+    wallet: Wallet,
+  ): Promise<MemberedAndMessagedDialect> {
+    this.validateCreateDialectCommand(command, wallet);
+    const { members, encrypted } = command;
+    const membersWithWallets = await this.getMemberWallets(members);
+    const dialectAddress = await DialectAddressProvider.getAddress(
+      membersWithWallets.map((it) => new PublicKey(it.publicKey)),
+    );
+    return this.prisma.dialect.create({
+      data: {
+        publicKey: dialectAddress.toBase58(),
+        encrypted,
+        members: {
+          createMany: {
+            data: membersWithWallets.map(({ id: walletId, scopes }) => ({
+              scopes,
+              walletId,
+            })),
+          },
+        },
+      },
+      include: DIALECT_INCLUDES,
+    });
+  }
+
+  private async getMemberWallets(members: DialectMemberDto[]) {
+    const memberPublicKeys = members.map((it) => new PublicKey(it.publicKey));
+    const memberWallets = await this.walletService.upsert(...memberPublicKeys);
+    const membersWithWallets = _.values(
+      _.merge(
+        _.keyBy(members, (it) => it.publicKey),
+        _.keyBy(memberWallets, (it) => it.publicKey),
+      ),
+    );
+    return membersWithWallets;
+  }
+
+  async createMember(
+    dialect: Dialect,
+    member: DialectMemberDto,
+    wallet: Wallet,
+  ): Promise<Member> {
+    return await this.prisma.member.create({
+      data: {
+        dialectId: dialect.id,
+        walletId: wallet.id,
+        scopes: member.scopes,
+      },
+    });
+  }
+
+  private validateCreateDialectCommand(
+    { members }: CreateDialectCommandDto,
+    wallet: Wallet,
+  ) {
+    this.checkWalletIsAdmin(wallet, members);
+  }
+
+  private checkWalletIsAdmin(wallet: Wallet, members: DialectMemberDto[]) {
+    const walletMember = members.find(
+      ({ publicKey }) => publicKey === wallet.publicKey,
+    );
+    if (!walletMember) {
+      throw new ForbiddenException('Must be a member of created dialect');
+    }
+    const walletMemberIsAdmin = walletMember.scopes.some(
+      (it) => it === MemberScopeDto.Admin,
+    );
+    if (!walletMemberIsAdmin) {
+      throw new UnprocessableEntityException(
+        'Must be an admin of created dialect',
+      );
+    }
+  }
+}

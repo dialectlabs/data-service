@@ -3,6 +3,17 @@ import {
   MemberedMessage,
   WalletedMember,
 } from './dialect.prisma';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  ArrayNotEmpty,
+  ArrayUnique,
+  IsArray,
+  IsBoolean,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsPublicKey } from '../middleware/public-key-validation';
 
 //
 // DTO types
@@ -39,11 +50,6 @@ export class DialectDto {
   }
 }
 
-export enum MemberScopeDto {
-  Admin = 'ADMIN',
-  Write = 'WRITE',
-}
-
 export class MemberDto {
   readonly publicKey!: string;
   readonly scopes!: MemberScopeDto[];
@@ -70,15 +76,31 @@ export class MessageDto {
   }
 }
 
-export class PostMemberDto {
-  readonly publicKey!: string;
-  readonly scopes!: MemberScopeDto[];
+export enum MemberScopeDto {
+  Admin = 'ADMIN',
+  Write = 'WRITE',
 }
 
-export class PostDialectDto {
-  // TODO: check size === 2
-  readonly members!: PostMemberDto[];
+export class CreateDialectCommandDto {
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayMaxSize(2)
+  @ArrayMinSize(2)
+  @ArrayUnique((member) => member.publicKey)
+  @ValidateNested({ each: true })
+  @Type(() => DialectMemberDto)
+  readonly members!: DialectMemberDto[];
+  @IsBoolean()
   readonly encrypted!: boolean;
+}
+
+export class DialectMemberDto {
+  @IsPublicKey()
+  readonly publicKey!: string;
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayUnique((scope) => scope)
+  readonly scopes!: MemberScopeDto[];
 }
 
 export class PostMessageDto {

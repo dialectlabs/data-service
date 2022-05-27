@@ -1,7 +1,5 @@
 import { Dialect, Member, Message, Wallet } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Keypair, PublicKey } from '@solana/web3.js';
-import { PostMemberDto } from './dialect.controller.dto';
 import { HttpException, HttpStatus } from '@nestjs/common';
 
 //
@@ -25,49 +23,32 @@ export type DialectedMember = Member & {
   dialect: MemberedAndMessagedDialect;
 };
 
-const DIALECTED_MEMBER_INCLUDES = {
-  dialect: {
+export const DIALECT_INCLUDES = {
+  members: {
     include: {
-      members: {
+      wallet: true,
+    },
+  },
+  // TODO: Limit to last N messages, sorted.
+  messages: {
+    // orderBy: {
+    //   timestamp: 'desc',
+    // },
+    // take: 50,
+    include: {
+      member: {
         include: {
           wallet: true,
-        },
-      },
-      // TODO: Limit to last N messages, sorted.
-      messages: {
-        include: {
-          member: {
-            include: {
-              wallet: true,
-            },
-          },
         },
       },
     },
   },
 };
-
-export async function findAllDialects(
-  prisma: PrismaService,
-  wallet: Wallet,
-): Promise<MemberedAndMessagedDialect[]> {
-  // Fetch dialects for member. We do this via the members since includes are trivial.
-  const members: DialectedMember[] = await prisma.member.findMany({
-    where: {
-      walletId: wallet.id,
-    },
-    include: DIALECTED_MEMBER_INCLUDES,
-  });
-
-  // TODO: confirm dialects are already unique & rm filter.
-  const dialects: MemberedAndMessagedDialect[] = members
-    .map((m: DialectedMember) => m.dialect)
-    .filter(
-      (dialect: Dialect, idx: number, dialects_: Dialect[]) =>
-        dialects_.indexOf(dialect) === idx,
-    );
-  return dialects;
-}
+export const DIALECTED_MEMBER_INCLUDES = {
+  dialect: {
+    include: DIALECT_INCLUDES,
+  },
+};
 
 export async function findDialect(
   prisma: PrismaService,
@@ -90,76 +71,6 @@ export async function findDialect(
     );
   const dialect = members[0].dialect;
   return dialect;
-}
-
-export async function postDialect(
-  prisma: PrismaService,
-  members: PostMemberDto[],
-  encrypted: boolean,
-): Promise<Dialect> {
-  // Validate member public keys, upsert wallets
-  members.map(async (m: PostMemberDto) => {
-    try {
-      new PublicKey(m.publicKey);
-    } catch {
-      // TODO: Make custom error class here, use HttpException in controller instead.
-      throw new HttpException(
-        `Cannot create dialect. Member supplied with invalid public key ${m.publicKey}.`,
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  });
-  const wallets = await Promise.all(
-    members.map(async (m: PostMemberDto): Promise<Wallet> => {
-      const wallet = await prisma.wallet.upsert({
-        where: {
-          publicKey: m.publicKey,
-        },
-        create: {
-          publicKey: m.publicKey,
-        },
-        update: {},
-      });
-      return wallet;
-    }),
-  );
-
-  // TODO: implement
-  // const [publicKey, nonce]: [PublicKey, number] =
-  //   await getDialectProgramAddress(program, members);
-
-  const pk = Keypair.generate().publicKey;
-
-  const dialect = await prisma.dialect.create({
-    data: {
-      publicKey: pk.toBase58(),
-      encrypted,
-    },
-  });
-
-  await Promise.all(
-    members.map(async (m: PostMemberDto, idx: number) => {
-      await postMember(prisma, dialect, m, wallets[idx]);
-    }),
-  );
-
-  return dialect;
-}
-
-async function postMember(
-  prisma: PrismaService,
-  dialect: Dialect,
-  member: PostMemberDto,
-  wallet: Wallet,
-): Promise<Member> {
-  const member_ = await prisma.member.create({
-    data: {
-      dialectId: dialect.id,
-      walletId: wallet.id,
-      scopes: member.scopes,
-    },
-  });
-  return member_;
 }
 
 export async function postMessage(

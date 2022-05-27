@@ -8,7 +8,7 @@ import {
 import { PublicKey } from '@solana/web3.js';
 import nacl from 'tweetnacl';
 import { Request } from 'express';
-import { requireValidPublicKey } from '../middleware/public-key-validation-pipe';
+import { requireValidPublicKey } from '../middleware/public-key-validation';
 import { PrismaService } from '../prisma/prisma.service';
 import { Token } from '@dialectlabs/sdk';
 import { Principal } from './authenticaiton.decorator';
@@ -62,7 +62,6 @@ export class AuthenticationGuard implements CanActivate {
     if (Token.isExpired(token)) {
       throw new UnauthorizedException('Token expired');
     }
-    console.log(token);
     const publicKey = requireValidPublicKey(token.body.sub);
     return this.upsertWallet(publicKey);
   }

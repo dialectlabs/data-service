@@ -6,7 +6,7 @@ import { SubscriberDto } from './dapp.controller.dto';
 import _ from 'lodash';
 import { DappService } from './dapp.service';
 import { DappAddress, Prisma } from '@prisma/client';
-import { PublicKeyValidationPipe } from '../middleware/public-key-validation-pipe';
+import { PublicKeyValidationPipe } from '../middleware/public-key-validation';
 import { AuthenticationGuard } from '../auth/authentication.guard';
 import { DappAuthenticationGuard } from '../auth/dapp-authentication.guard';
 

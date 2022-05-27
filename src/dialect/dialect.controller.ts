@@ -12,19 +12,14 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  CreateDialectCommandDto,
   DialectAccountDto,
-  PostDialectDto,
   PostMessageDto,
 } from './dialect.controller.dto';
-import {
-  deleteDialect,
-  findAllDialects,
-  findDialect,
-  postDialect,
-  postMessage,
-} from './dialect.prisma';
+import { deleteDialect, findDialect, postMessage } from './dialect.prisma';
 import { AuthenticationGuard } from '../auth/authentication.guard';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
+import { DialectService } from './dialect.service';
 
 @ApiTags('Dialects')
 @ApiBearerAuth()
@@ -34,50 +29,24 @@ import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
   version: '0',
 })
 export class DialectController {
-  constructor(private readonly prisma: PrismaService) {}
-
-  // Create a new dialect
-  @Post('/')
-  async post(
-    @AuthPrincipal() { wallet }: Principal,
-    @Body() postDialectDto: PostDialectDto,
-  ) {
-    // TODO: Parse & verify inputs, incl. that wallet is a member
-    const dialect_ = await postDialect(
-      this.prisma,
-      postDialectDto.members,
-      postDialectDto.encrypted,
-    );
-
-    // We know the dialect exists now.
-    const dialect = await findDialect(this.prisma, wallet, dialect_.publicKey);
-    return DialectAccountDto.fromDialect(dialect!);
-  }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly dialectService: DialectService,
+  ) {}
 
   @Get('/')
-  async get(@AuthPrincipal() { wallet }: Principal) {
-    const dialects = await findAllDialects(this.prisma, wallet);
+  async findAll(@AuthPrincipal() { wallet }: Principal) {
+    const dialects = await this.dialectService.findAll(wallet);
     return dialects.map(DialectAccountDto.fromDialect);
-    // TODO: rm once above class methods are tested.
-    // return dialects.map((d: Dialect) => (
-    //   {
-    //     publicKey: d.address,
-    //     dialect: {
-    //       members: d.members.map((m: Member) => ({
-    //         publicKey: m.wallet.publicKey,
-    //         scopes: m.scopes,
-    //       } as MemberDto)),
-    //       messages: d.messages.map((m: Message) => ({
-    //         owner: m.member.wallet.publicKey,
-    //         text: m.text,
-    //         timestamp: m.timestamp,
-    //       } as MessageDto)),
-    //       nextMessageIdx: 0,
-    //       lastMessageTimestamp: 0,
-    //       encrypted: d.encrypted,
-    //     } as DialectDto
-    //   } as DialectAccountDto
-    // ));
+  }
+
+  @Post('/')
+  async create(
+    @AuthPrincipal() { wallet }: Principal,
+    @Body() command: CreateDialectCommandDto,
+  ) {
+    const dialect = await this.dialectService.create(command, wallet);
+    return DialectAccountDto.fromDialect(dialect);
   }
 
   @Get('/:public_key')
