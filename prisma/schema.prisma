@@ -127,7 +127,7 @@ model Member {
 
   // relations
   dialectId String    @map("dialect_id") @db.Uuid
-  dialect   Dialect   @relation(fields: [dialectId], references: [id])
+  dialect   Dialect   @relation(fields: [dialectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   walletId  String    @map("wallet_id") @db.Uuid
   wallet    Wallet    @relation(fields: [walletId], references: [id])
   messages  Message[]
@@ -152,10 +152,10 @@ model Message {
 
   // relations
   dialectId String  @map("dialect_id") @db.Uuid
-  dialect   Dialect @relation(fields: [dialectId], references: [id])
+  dialect   Dialect @relation(fields: [dialectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   // TODO: Should this be a wallet relation? E.g. persist past messages even if author is removed as a member.
   memberId  String  @map("member_id") @db.Uuid
-  member    Member  @relation(fields: [memberId], references: [id])
+  member    Member  @relation(fields: [memberId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   // meta
   @@map("messages")

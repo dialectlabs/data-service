@@ -1,7 +1,11 @@
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  BadRequestException,
   ForbiddenException,
+  HttpException,
+  HttpStatus,
   Injectable,
+  NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
@@ -9,8 +13,9 @@ import {
   DIALECTED_MEMBER_INCLUDES,
   DialectedMember,
   MemberedAndMessagedDialect,
+  WalletedMember,
 } from './dialect.prisma';
-import { Dialect, Wallet } from '@prisma/client';
+import { Dialect, Scope, Wallet } from '@prisma/client';
 import {
   CreateDialectCommandDto,
   DialectMemberDto,
@@ -86,6 +91,29 @@ export class DialectService {
         },
       },
       include: DIALECT_INCLUDES,
+    });
+  }
+
+  async delete(publicKey: string, wallet: Wallet) {
+    const dialect = await this.find(publicKey, wallet);
+    if (!dialect)
+      throw new NotFoundException(
+        `No Dialect ${publicKey} found for Wallet ${wallet.publicKey}, cannot delete.`,
+      );
+    if (
+      !dialect.members.find(
+        (m: WalletedMember) =>
+          m.walletId === wallet.id && m.scopes.find((it) => it === Scope.ADMIN),
+      )
+    ) {
+      throw new ForbiddenException(
+        `Wallet ${wallet.publicKey} does not have admin privileges, cannot delete Dialect.`,
+      );
+    }
+    await this.prisma.dialect.delete({
+      where: {
+        id: dialect.id,
+      },
     });
   }
 
