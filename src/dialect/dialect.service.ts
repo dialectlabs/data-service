@@ -1,9 +1,6 @@
 import { PrismaService } from '../prisma/prisma.service';
 import {
-  BadRequestException,
   ForbiddenException,
-  HttpException,
-  HttpStatus,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
@@ -15,11 +12,12 @@ import {
   MemberedAndMessagedDialect,
   WalletedMember,
 } from './dialect.prisma';
-import { Dialect, Scope, Wallet } from '@prisma/client';
+import { Dialect, Member, Message, Scope, Wallet } from '@prisma/client';
 import {
   CreateDialectCommandDto,
   DialectMemberDto,
   MemberScopeDto,
+  SendMessageCommandDto,
 } from './dialect.controller.dto';
 import { PublicKey } from '@solana/web3.js';
 import { WalletService } from '../wallet/wallet.service';
@@ -117,6 +115,61 @@ export class DialectService {
     });
   }
 
+  async sendMessage(
+    command: SendMessageCommandDto,
+    dialectPublicKey: string,
+    wallet: Wallet,
+  ): Promise<MemberedAndMessagedDialect> {
+    // TODO: Reduce includes in this query since less is needed.
+    const text = command.text;
+    const dialect = await this.findOrThrow(dialectPublicKey, wallet);
+    // Assert wallet has write privileges
+    const canWrite = this.checkWalletCanWriteTo(wallet, dialect);
+    await this.postMessage(canWrite, dialect.id, text);
+    return this.findOrThrow(dialectPublicKey, wallet);
+  }
+
+  private checkWalletCanWriteTo(
+    wallet: Wallet,
+    dialect: MemberedAndMessagedDialect,
+  ) {
+    const canWrite = dialect.members.find(
+      (m) =>
+        m.wallet.publicKey === wallet.publicKey &&
+        m.scopes.find((it) => it === Scope.WRITE),
+    );
+    if (!canWrite)
+      throw new ForbiddenException(
+        `Wallet ${wallet.publicKey} does not have write privileges to Dialect ${dialect.publicKey}.`,
+      );
+    return canWrite;
+  }
+
+  private async findOrThrow(dialectPublicKey: string, wallet: Wallet) {
+    const dialect = await this.find(dialectPublicKey, wallet);
+    if (!dialect)
+      throw new NotFoundException(
+        `No Dialect with public key ${dialectPublicKey} found for wallet ${wallet.publicKey}, cannot post new message.`,
+      );
+    return dialect;
+  }
+
+  postMessage(
+    member: Member,
+    dialectId: string,
+    text: number[],
+  ): Promise<Message> {
+    const timestamp = new Date();
+    return this.prisma.message.create({
+      data: {
+        dialectId,
+        memberId: member.id,
+        text: Buffer.from(text),
+        timestamp, // TODO: deal with last message ts and index in dialect
+      },
+    });
+  }
+
   private async getMemberWallets(members: DialectMemberDto[]) {
     const memberPublicKeys = members.map((it) => new PublicKey(it.publicKey));
     const memberWallets = await this.walletService.upsert(...memberPublicKeys);
@@ -143,7 +196,7 @@ export class DialectService {
       throw new ForbiddenException('Must be a member of created dialect');
     }
     const walletMemberIsAdmin = walletMember.scopes.some(
-      (it) => it === MemberScopeDto.Admin,
+      (it) => it === MemberScopeDto.ADMIN,
     );
     if (!walletMemberIsAdmin) {
       throw new UnprocessableEntityException(

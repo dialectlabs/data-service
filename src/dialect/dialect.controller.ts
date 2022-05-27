@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   HttpCode,
-  HttpException,
   HttpStatus,
   NotFoundException,
   Param,
@@ -16,9 +15,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateDialectCommandDto,
   DialectAccountDto,
-  PostMessageDto,
+  SendMessageCommandDto,
 } from './dialect.controller.dto';
-import { findDialect, postMessage } from './dialect.prisma';
 import { AuthenticationGuard } from '../auth/authentication.guard';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 import { DialectService } from './dialect.service';
@@ -68,44 +66,23 @@ export class DialectController {
   @Delete('/:public_key')
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(
-    @Param('public_key') dialectPublicKey: string,
     @AuthPrincipal() { wallet }: Principal,
+    @Param('public_key', PublicKeyValidationPipe) dialectPublicKey: string,
   ) {
     await this.dialectService.delete(dialectPublicKey, wallet);
   }
 
   @Post('/:public_key/messages')
-  async postMessage(
-    @Param('public_key') dialectPublicKey: string,
+  async sendMessage(
     @AuthPrincipal() { wallet }: Principal,
-    @Body() postMessageDto: PostMessageDto,
+    @Param('public_key', PublicKeyValidationPipe) dialectPublicKey: string,
+    @Body() command: SendMessageCommandDto,
   ) {
-    // TODO: Reduce includes in this query since less is needed.
-    const text = postMessageDto.text;
-    if (!text)
-      throw new HttpException(
-        `Must supply text to the body of this request. Text supplied ${text}`,
-        HttpStatus.BAD_REQUEST,
-      );
-    let dialect = await findDialect(this.prisma, wallet, dialectPublicKey);
-    if (!dialect)
-      throw new HttpException(
-        `No Dialect with public key ${dialectPublicKey} found for wallet ${wallet.publicKey}, cannot post new message.`,
-        HttpStatus.BAD_REQUEST,
-      );
-    // Assert wallet has write privileges
-    const member = dialect.members.find(
-      (m) => m.wallet.publicKey === wallet.publicKey && m.scopes[1],
+    const dialect = await this.dialectService.sendMessage(
+      command,
+      dialectPublicKey,
+      wallet,
     );
-    if (!member)
-      throw new HttpException(
-        `Wallet ${wallet.publicKey} does not have write privileges to Dialect ${dialect.publicKey}.`,
-        HttpStatus.UNAUTHORIZED,
-      );
-    await postMessage(this.prisma, member, dialect.id, text);
-
-    // We know the dialect exists at this point
-    dialect = await findDialect(this.prisma, wallet, dialectPublicKey);
-    return DialectAccountDto.fromDialect(dialect!);
+    return DialectAccountDto.fromDialect(dialect);
   }
 }
