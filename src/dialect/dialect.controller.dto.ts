@@ -23,11 +23,11 @@ export class DialectAccountDto {
   readonly publicKey!: string;
   readonly dialect!: DialectDto;
 
-  static fromDialect(dialect: MemberedAndMessagedDialect) {
+  static fromDialect(dialect: MemberedAndMessagedDialect): DialectAccountDto {
     return {
       publicKey: dialect.publicKey,
       dialect: DialectDto.fromDialect(dialect),
-    } as DialectAccountDto;
+    };
   }
 }
 
@@ -39,14 +39,14 @@ export class DialectDto {
   readonly lastMessageTimestamp!: number;
   readonly encrypted!: boolean;
 
-  static fromDialect(dialect: MemberedAndMessagedDialect) {
+  static fromDialect(dialect: MemberedAndMessagedDialect): DialectDto {
     return {
       members: dialect.members.map(MemberDto.fromMember),
       messages: dialect.messages.map(MessageDto.fromMessage),
       nextMessageIdx: 0,
       lastMessageTimestamp: 0,
       encrypted: dialect.encrypted,
-    } as DialectDto;
+    };
   }
 }
 
@@ -54,31 +54,31 @@ export class MemberDto {
   readonly publicKey!: string;
   readonly scopes!: MemberScopeDto[];
 
-  static fromMember(member: WalletedMember) {
+  static fromMember(member: WalletedMember): MemberDto {
     return {
       publicKey: member.wallet.publicKey,
-      scopes: member.scopes,
-    } as MemberDto;
+      scopes: member.scopes.map((it) => MemberScopeDto[it]),
+    };
   }
 }
 
 export class MessageDto {
   readonly owner!: string;
-  readonly text!: Buffer;
+  readonly text!: number[];
   readonly timestamp!: number;
 
   static fromMessage(message: MemberedMessage): MessageDto {
     return {
       owner: message.member.wallet.publicKey,
-      text: message.text,
+      text: Array.from(new Uint8Array(message.text)),
       timestamp: message.timestamp.getTime(),
     };
   }
 }
 
 export enum MemberScopeDto {
-  Admin = 'ADMIN',
-  Write = 'WRITE',
+  ADMIN = 'ADMIN',
+  WRITE = 'WRITE',
 }
 
 export class CreateDialectCommandDto {
@@ -103,6 +103,9 @@ export class DialectMemberDto {
   readonly scopes!: MemberScopeDto[];
 }
 
-export class PostMessageDto {
-  readonly text!: Buffer;
+export class SendMessageCommandDto {
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayMaxSize(1024)
+  readonly text!: number[];
 }
