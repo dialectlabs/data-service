@@ -90,31 +90,3 @@ export async function postMessage(
   });
   return message;
 }
-
-export async function deleteDialect(
-  prisma: PrismaService,
-  wallet: Wallet,
-  publicKey: string,
-): Promise<void> {
-  const dialect = await findDialect(prisma, wallet, publicKey);
-  if (!dialect)
-    throw new HttpException(
-      `No Dialect ${publicKey} found for Wallet ${wallet.publicKey}, cannot delete.`,
-      HttpStatus.BAD_REQUEST,
-    );
-  if (
-    !dialect.members.some(
-      (m: WalletedMember) =>
-        m.wallet.publicKey === wallet.publicKey && m.scopes[1],
-    )
-  )
-    throw new HttpException(
-      `Wallet ${wallet.publicKey} does not have admin privileges, cannot delete Dialect.`,
-      HttpStatus.UNAUTHORIZED,
-    );
-  await prisma.dialect.delete({
-    where: {
-      id: dialect.id,
-    },
-  });
-}

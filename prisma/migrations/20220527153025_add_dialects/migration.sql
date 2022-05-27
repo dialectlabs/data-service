@@ -45,10 +45,10 @@ CREATE UNIQUE INDEX "members_wallet_id_dialect_id_key" ON "members"("wallet_id",
 ALTER TABLE "members" ADD CONSTRAINT "members_wallet_id_fkey" FOREIGN KEY ("wallet_id") REFERENCES "wallets"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "members" ADD CONSTRAINT "members_dialect_id_fkey" FOREIGN KEY ("dialect_id") REFERENCES "dialects"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "members" ADD CONSTRAINT "members_dialect_id_fkey" FOREIGN KEY ("dialect_id") REFERENCES "dialects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "messages" ADD CONSTRAINT "messages_dialect_id_fkey" FOREIGN KEY ("dialect_id") REFERENCES "dialects"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "messages" ADD CONSTRAINT "messages_dialect_id_fkey" FOREIGN KEY ("dialect_id") REFERENCES "dialects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "messages" ADD CONSTRAINT "messages_member_id_fkey" FOREIGN KEY ("member_id") REFERENCES "members"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "messages" ADD CONSTRAINT "messages_member_id_fkey" FOREIGN KEY ("member_id") REFERENCES "members"("id") ON DELETE CASCADE ON UPDATE CASCADE;
