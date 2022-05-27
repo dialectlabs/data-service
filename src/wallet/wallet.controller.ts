@@ -25,7 +25,7 @@ import { AuthenticationGuard } from '../auth/authentication.guard';
 import { MailVerificationService } from '../mail/mail.service';
 import { generateVerificationCode } from 'src/utils';
 import { SmsVerificationService } from 'src/sms/sms.service';
-import { PublicKeyValidationPipe } from '../middleware/public-key-validation-pipe';
+import { PublicKeyValidationPipe } from '../middleware/public-key-validation';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 
 @ApiTags('Wallets')

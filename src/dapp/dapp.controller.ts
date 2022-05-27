@@ -1,31 +1,14 @@
 // TODO: Enforce UUID format in some kind of middleware exception handling.
 // Consolidate exception handling into single wrapper
-import {
-  Body,
-  Controller,
-  ForbiddenException,
-  Get,
-  Param,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import {
-  AddressDto,
-  AddressTypeDto,
-  CreateDappCommand,
-  DappAddressDto,
-  DappDto,
-  SubscriberDto,
-  WalletDto,
-} from './dapp.controller.dto';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+import { SubscriberDto } from './dapp.controller.dto';
 import _ from 'lodash';
 import { DappService } from './dapp.service';
-import { Address, Dapp, DappAddress, Prisma, Wallet } from '@prisma/client';
+import { DappAddress, Prisma } from '@prisma/client';
 import { PublicKeyValidationPipe } from '../middleware/public-key-validation';
 import { AuthenticationGuard } from '../auth/authentication.guard';
 import { DappAuthenticationGuard } from '../auth/dapp-authentication.guard';
-import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 
 @ApiTags('Dapps')
 @Controller({
@@ -42,10 +25,6 @@ export class DappController {
    */
   @Get(':public_key/subscribers')
   @UseGuards(AuthenticationGuard, DappAuthenticationGuard)
-  @ApiOperation({
-    deprecated: true,
-    description: 'Use /:public_key/dappAddresses instead',
-  })
   async get(
     @Param('public_key', PublicKeyValidationPipe) dappPublicKey: string,
   ): Promise<SubscriberDto[]> {
@@ -57,7 +36,7 @@ export class DappController {
         resourceId: it.address.wallet.publicKey,
         ...(it.address.type === 'email' && { email: it.address.value }),
         ...(it.address.type === 'telegram' && {
-          telegramId: DappController.extractTelegramChatId(it),
+          telegramId: DappController.extractTelegramId(it),
         }),
         ...(it.address.type === 'sms' && { smsNumber: it.address.value }),
       }))
@@ -72,7 +51,7 @@ export class DappController {
       .value();
   }
 
-  private static extractTelegramChatId(
+  private static extractTelegramId(
     dappAddress: DappAddress,
   ): string | undefined {
     if (!dappAddress.metadata) {
@@ -81,93 +60,6 @@ export class DappController {
     const metadata = dappAddress.metadata as Prisma.JsonObject;
     if (metadata.telegram_chat_id) {
       return metadata.telegram_chat_id as string;
-    }
-  }
-
-  @Post()
-  @UseGuards(AuthenticationGuard)
-  async create(
-    @AuthPrincipal() principal: Principal,
-    @Body() command: CreateDappCommand,
-  ): Promise<DappDto> {
-    DappController.checkOperationAllowed(command.publicKey, principal);
-    const dapp = await this.dappService.create(command.publicKey);
-    return DappController.toDappDto(dapp);
-  }
-
-  private static toDappDto(dapp: Dapp) {
-    return {
-      id: dapp.id,
-      publicKey: dapp.publicKey,
-    };
-  }
-
-  @Get(':public_key/dappAddresses')
-  @UseGuards(AuthenticationGuard, DappAuthenticationGuard)
-  async dappAddresses(
-    @AuthPrincipal() principal: Principal,
-    @Param('public_key', PublicKeyValidationPipe) dappPublicKey: string,
-  ): Promise<DappAddressDto[]> {
-    DappController.checkOperationAllowed(dappPublicKey, principal);
-    const dappAddresses = await this.dappService.findDappAdresses(
-      dappPublicKey,
-    );
-    return dappAddresses.map((it) => ({
-      id: it.id,
-      enabled: it.enabled,
-      telegramChatId: DappController.extractTelegramChatId(it),
-      address: DappController.toAddressDto(it.address),
-    }));
-  }
-
-  private static toAddressDto(
-    address: Address & { wallet: Wallet },
-  ): AddressDto {
-    const wallet = address.wallet;
-    return {
-      id: address.id,
-      value: address.value,
-      type: DappController.toAddressTypeDto(address.type),
-      verified: address.verified,
-      wallet: this.toWalletDto(wallet),
-    };
-  }
-
-  private static toWalletDto(wallet: Wallet): WalletDto {
-    return {
-      id: wallet.id,
-      publicKey: wallet.publicKey,
-    };
-  }
-
-  private static toAddressTypeDto(type: string): AddressTypeDto {
-    switch (type) {
-      case 'email': {
-        return AddressTypeDto.Email;
-      }
-      case 'sms': {
-        return AddressTypeDto.Sms;
-      }
-      case 'telegram': {
-        return AddressTypeDto.Telegram;
-      }
-      case 'wallet': {
-        return AddressTypeDto.Wallet;
-      }
-      default: {
-        throw new Error('Should not happen');
-      }
-    }
-  }
-
-  private static checkOperationAllowed(
-    dappPublicKey: string,
-    principal: Principal,
-  ) {
-    if (dappPublicKey !== principal.wallet.publicKey) {
-      throw new ForbiddenException(
-        `Not authorized to perform operations for dapp ${dappPublicKey}.`,
-      );
     }
   }
 }
