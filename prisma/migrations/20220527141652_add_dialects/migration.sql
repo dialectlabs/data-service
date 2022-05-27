@@ -1,3 +1,6 @@
+-- CreateEnum
+CREATE TYPE "Scope" AS ENUM ('ADMIN', 'WRITE');
+
 -- CreateTable
 CREATE TABLE "dialects" (
     "id" UUID NOT NULL,
@@ -14,7 +17,7 @@ CREATE TABLE "members" (
     "id" UUID NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "scopes" BOOLEAN[],
+    "scopes" "Scope"[],
     "dialect_id" UUID NOT NULL,
     "wallet_id" UUID NOT NULL,
 
@@ -34,6 +37,9 @@ CREATE TABLE "messages" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "dialects_public_key_key" ON "dialects"("public_key");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "members_wallet_id_dialect_id_key" ON "members"("wallet_id", "dialect_id");
 
 -- AddForeignKey
 ALTER TABLE "members" ADD CONSTRAINT "members_wallet_id_fkey" FOREIGN KEY ("wallet_id") REFERENCES "wallets"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

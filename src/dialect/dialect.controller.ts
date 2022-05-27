@@ -5,6 +5,7 @@ import {
   Get,
   HttpException,
   HttpStatus,
+  NotFoundException,
   Param,
   Post,
   UseGuards,
@@ -20,6 +21,7 @@ import { deleteDialect, findDialect, postMessage } from './dialect.prisma';
 import { AuthenticationGuard } from '../auth/authentication.guard';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 import { DialectService } from './dialect.service';
+import { PublicKeyValidationPipe } from '../middleware/public-key-validation';
 
 @ApiTags('Dialects')
 @ApiBearerAuth()
@@ -51,14 +53,13 @@ export class DialectController {
 
   @Get('/:public_key')
   async getDialect(
-    @Param('public_key') dialectPublicKey: string,
     @AuthPrincipal() { wallet }: Principal,
+    @Param('public_key', PublicKeyValidationPipe) dialectPublicKey: string,
   ) {
-    const dialect = await findDialect(this.prisma, wallet, dialectPublicKey);
+    const dialect = await this.dialectService.find(dialectPublicKey, wallet);
     if (!dialect)
-      throw new HttpException(
+      throw new NotFoundException(
         `No Dialect with public key ${dialectPublicKey} found for wallet ${wallet.publicKey}.`,
-        HttpStatus.NOT_FOUND,
       );
     return DialectAccountDto.fromDialect(dialect);
   }

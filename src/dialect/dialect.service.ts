@@ -10,7 +10,7 @@ import {
   DialectedMember,
   MemberedAndMessagedDialect,
 } from './dialect.prisma';
-import { Dialect, Member, Wallet } from '@prisma/client';
+import { Dialect, Wallet } from '@prisma/client';
 import {
   CreateDialectCommandDto,
   DialectMemberDto,
@@ -45,6 +45,23 @@ export class DialectService {
       );
   }
 
+  async find(
+    publicKey: string,
+    wallet: Wallet,
+  ): Promise<MemberedAndMessagedDialect | null> {
+    return this.prisma.dialect.findFirst({
+      where: {
+        publicKey,
+        members: {
+          some: {
+            walletId: wallet.id,
+          },
+        },
+      },
+      include: DIALECT_INCLUDES,
+    });
+  }
+
   async create(
     command: CreateDialectCommandDto,
     wallet: Wallet,
@@ -75,27 +92,12 @@ export class DialectService {
   private async getMemberWallets(members: DialectMemberDto[]) {
     const memberPublicKeys = members.map((it) => new PublicKey(it.publicKey));
     const memberWallets = await this.walletService.upsert(...memberPublicKeys);
-    const membersWithWallets = _.values(
+    return _.values(
       _.merge(
         _.keyBy(members, (it) => it.publicKey),
         _.keyBy(memberWallets, (it) => it.publicKey),
       ),
     );
-    return membersWithWallets;
-  }
-
-  async createMember(
-    dialect: Dialect,
-    member: DialectMemberDto,
-    wallet: Wallet,
-  ): Promise<Member> {
-    return await this.prisma.member.create({
-      data: {
-        dialectId: dialect.id,
-        walletId: wallet.id,
-        scopes: member.scopes,
-      },
-    });
   }
 
   private validateCreateDialectCommand(
