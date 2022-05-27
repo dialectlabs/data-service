@@ -133,6 +133,7 @@ model Member {
   messages  Message[]
 
   // meta
+  @@unique([walletId, dialectId])
   @@map("members")
 }
 
