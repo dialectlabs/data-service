@@ -22,9 +22,9 @@ import {
 } from './wallet.controller.v0.dto';
 import { DappService } from '../dapp/dapp.service';
 import { AuthenticationGuard } from '../auth/authentication.guard';
-import { MailVerificationService } from '../mail/mail.service';
+import { MailService } from '../mail/mail.service';
 import { generateVerificationCode } from 'src/utils';
-import { SmsVerificationService } from 'src/sms/sms.service';
+import { SmsService } from 'src/sms/sms.service';
 import { PublicKeyValidationPipe } from '../middleware/public-key-validation';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 
@@ -36,8 +36,8 @@ export class WalletControllerV0 {
   constructor(
     private readonly prisma: PrismaService,
     private readonly dappService: DappService,
-    private readonly mailService: MailVerificationService,
-    private readonly smsVerificationService: SmsVerificationService,
+    private readonly mailService: MailService,
+    private readonly smsService: SmsService,
   ) {}
 
   /**
@@ -112,6 +112,7 @@ export class WalletControllerV0 {
         dappAddresses: true,
       },
     });
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     return addresses.map((address) => {
       // Filter for only the dapp addresses affiliated with this dapp.
@@ -201,7 +202,7 @@ export class WalletControllerV0 {
       if (type == 'email') {
         this.mailService.sendVerificationCode(value, code);
       } else if (type == 'sms') {
-        this.smsVerificationService.sendVerificationCode(value, code);
+        this.smsService.sendVerificationCode(value, code);
       }
     } else if (value) {
       /**
@@ -282,9 +283,11 @@ export class WalletControllerV0 {
           },
         },
       });
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       const metadata = otherDappAddress?.metadata?.telegram_chat_id
         ? {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             telegram_chat_id: otherDappAddress?.metadata?.telegram_chat_id,
           }
@@ -395,7 +398,7 @@ export class WalletControllerV0 {
       if (address?.type == 'email') {
         this.mailService.sendVerificationCode(value, code);
       } else if (address?.type == 'sms') {
-        this.smsVerificationService.sendVerificationCode(value, code);
+        this.smsService.sendVerificationCode(value, code);
       }
 
       if (!address)
@@ -507,7 +510,7 @@ export class WalletControllerV0 {
       },
     });
 
-    let dappAddress = await this.prisma.dappAddress.findUnique({
+    const dappAddress = await this.prisma.dappAddress.findUnique({
       where: {
         id: id,
       },
@@ -579,7 +582,7 @@ export class WalletControllerV0 {
     if (address.type == 'email') {
       this.mailService.sendVerificationCode(address.value, code);
     } else if (address.type == 'sms') {
-      this.smsVerificationService.sendVerificationCode(address.value, code);
+      this.smsService.sendVerificationCode(address.value, code);
     }
   }
 }

@@ -1,20 +1,22 @@
 import { Logger } from '@nestjs/common';
 import { Twilio } from 'twilio';
 
-export abstract class SmsVerificationService {
+export abstract class SmsService {
   abstract sendVerificationCode(
     recipientSmsNumber: string,
     verificationCode: string,
   ): Promise<any>;
+
+  abstract send(to: string, body: string): Promise<void>;
 }
 
-export class NoopSmsVerificationService extends SmsVerificationService {
-  private readonly logger = new Logger(NoopSmsVerificationService.name);
+export class NoopSmsService extends SmsService {
+  private readonly logger = new Logger(NoopSmsService.name);
 
   constructor() {
     super();
     this.logger.warn(
-      `Using ${NoopSmsVerificationService.name} to send verification codes: no real sms messages will be sent`,
+      `Using ${NoopSmsService.name} to send verification codes: no real sms messages will be sent`,
     );
   }
 
@@ -26,12 +28,17 @@ export class NoopSmsVerificationService extends SmsVerificationService {
       `Sending verification code ${verificationCode} to ${recipientSmsNumber}`,
     );
   }
+
+  send(to: string, body: string): Promise<void> {
+    this.logger.log(`Sending ${body} to ${to}`);
+    return Promise.resolve();
+  }
 }
 
-export class TwilioSmsVerificationService extends SmsVerificationService {
+export class TwilioSmsService extends SmsService {
   private twilio: Twilio;
 
-  private readonly logger = new Logger(NoopSmsVerificationService.name);
+  private readonly logger = new Logger(NoopSmsService.name);
 
   constructor() {
     super();
@@ -39,6 +46,18 @@ export class TwilioSmsVerificationService extends SmsVerificationService {
       process.env.TWILIO_ACCOUNT_SID!,
       process.env.TWILIO_AUTH_TOKEN!,
     );
+  }
+
+  async send(to: string, body: string) {
+    try {
+      await this.twilio.messages.create({
+        to,
+        from: process.env.TWILIO_SMS_SENDER!,
+        body,
+      });
+    } catch (e: any) {
+      this.logger.error('Error sending Twilio message:', e['response'].body);
+    }
   }
 
   async sendVerificationCode(
