@@ -10,7 +10,7 @@ import nacl from 'tweetnacl';
 import { Request } from 'express';
 import { requireValidPublicKey } from '../middleware/public-key-validation';
 import { PrismaService } from '../prisma/prisma.service';
-import { Token } from '@dialectlabs/sdk';
+import { Auth } from '@dialectlabs/sdk';
 import { Principal } from './authenticaiton.decorator';
 
 function base64ToUint8(string: string): Uint8Array {
@@ -56,10 +56,10 @@ export class AuthenticationGuard implements CanActivate {
 
   private validateTokenV2(authToken: string) {
     const token = this.parseTokenV2(authToken);
-    if (!Token.isSignatureValid(token)) {
+    if (!Auth.tokens.isSignatureValid(token)) {
       throw new UnauthorizedException('Signature verification failed');
     }
-    if (Token.isExpired(token)) {
+    if (Auth.tokens.isExpired(token)) {
       throw new UnauthorizedException('Token expired');
     }
     const publicKey = requireValidPublicKey(token.body.sub);
@@ -68,7 +68,7 @@ export class AuthenticationGuard implements CanActivate {
 
   private parseTokenV2(authToken: string) {
     try {
-      return Token.parse(authToken);
+      return Auth.tokens.parse(authToken);
     } catch (e) {
       this.logger.log(
         `Failed to parse token ${authToken}\n ${JSON.stringify(e)}`,

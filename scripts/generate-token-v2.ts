@@ -1,11 +1,15 @@
 import { Duration } from 'luxon';
-import { EmbeddedWalletAdapter, Token } from '@dialectlabs/sdk';
+import {
+  NodeDialectWalletAdapter,
+  DialectWalletAdapterEd25519TokenSigner,
+  Auth,
+} from '@dialectlabs/sdk';
 
-const wallet = EmbeddedWalletAdapter.create();
+const wallet = NodeDialectWalletAdapter.create();
 
 (async () => {
-  const token = await Token.generate(
-    wallet,
+  const token = await Auth.tokens.generate(
+    new DialectWalletAdapterEd25519TokenSigner(wallet),
     Duration.fromObject({ minutes: 120 }),
   );
   console.log(token.rawValue);
