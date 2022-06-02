@@ -7,15 +7,14 @@ import {
 } from '@nestjs/common';
 import {
   DIALECT_INCLUDES,
-  DIALECTED_MEMBER_INCLUDES,
-  DialectedMember,
   MemberedAndMessagedDialect,
   WalletedMember,
 } from './dialect.prisma';
-import { Dialect, Member, Message, Scope, Wallet } from '@prisma/client';
+import { Member, Message, Scope, Wallet } from '@prisma/client';
 import {
   CreateDialectCommandDto,
   DialectMemberDto,
+  FindDialectQuery,
   MemberScopeDto,
   SendMessageCommandDto,
 } from './dialect.controller.dto';
@@ -31,21 +30,27 @@ export class DialectService {
     private readonly walletService: WalletService,
   ) {}
 
-  async findAll(wallet: Wallet): Promise<MemberedAndMessagedDialect[]> {
-    // Fetch dialects for member. We do this via the members since includes are trivial.
-    const members: DialectedMember[] = await this.prisma.member.findMany({
+  async findAll(
+    wallet: Wallet,
+    { memberPublicKey }: FindDialectQuery,
+  ): Promise<MemberedAndMessagedDialect[]> {
+    return this.prisma.dialect.findMany({
       where: {
-        walletId: wallet.id,
+        members: {
+          some: {
+            walletId: wallet.id,
+          },
+          ...(memberPublicKey && {
+            some: {
+              wallet: {
+                publicKey: memberPublicKey,
+              },
+            },
+          }),
+        },
       },
-      include: DIALECTED_MEMBER_INCLUDES,
+      include: DIALECT_INCLUDES,
     });
-    // TODO: confirm dialects are already unique & rm filter.
-    return members
-      .map((m: DialectedMember) => m.dialect)
-      .filter(
-        (dialect: Dialect, idx: number, dialects_: Dialect[]) =>
-          dialects_.indexOf(dialect) === idx,
-      );
   }
 
   async find(

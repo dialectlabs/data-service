@@ -10,6 +10,7 @@ import {
   ArrayUnique,
   IsArray,
   IsBoolean,
+  IsOptional,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -108,4 +109,10 @@ export class SendMessageCommandDto {
   @ArrayNotEmpty()
   @ArrayMaxSize(1024)
   readonly text!: number[];
+}
+
+export class FindDialectQuery {
+  @IsPublicKey()
+  @IsOptional()
+  readonly memberPublicKey?: string;
 }
