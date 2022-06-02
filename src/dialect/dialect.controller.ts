@@ -8,6 +8,7 @@ import {
   NotFoundException,
   Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -15,6 +16,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateDialectCommandDto,
   DialectAccountDto,
+  FindDialectQuery,
   SendMessageCommandDto,
 } from './dialect.controller.dto';
 import { AuthenticationGuard } from '../auth/authentication.guard';
@@ -36,8 +38,11 @@ export class DialectController {
   ) {}
 
   @Get('/')
-  async findAll(@AuthPrincipal() { wallet }: Principal) {
-    const dialects = await this.dialectService.findAll(wallet);
+  async findAll(
+    @AuthPrincipal() { wallet }: Principal,
+    @Query() query: FindDialectQuery,
+  ) {
+    const dialects = await this.dialectService.findAll(wallet, query);
     return dialects.map(DialectAccountDto.fromDialect);
   }
 
