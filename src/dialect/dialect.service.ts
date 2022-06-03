@@ -202,7 +202,7 @@ export class DialectService {
           dialectId,
           memberId: member.id,
           text: Buffer.from(text),
-          timestamp, // TODO: deal with last message ts and index in dialect
+          timestamp,
         },
       }),
       this.prisma.dialect.update({
