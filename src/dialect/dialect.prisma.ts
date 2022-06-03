@@ -13,22 +13,13 @@ export type MemberedAndMessagedDialect = Dialect & {
   messages: MemberedMessage[];
 };
 
-export type DialectedMember = Member & {
-  dialect: MemberedAndMessagedDialect;
-};
-
 export const DIALECT_INCLUDES = {
   members: {
     include: {
       wallet: true,
     },
   },
-  // TODO: Limit to last N messages, sorted.
   messages: {
-    // orderBy: {
-    //   timestamp: 'desc',
-    // },
-    // take: 50,
     include: {
       member: {
         include: {
@@ -36,10 +27,5 @@ export const DIALECT_INCLUDES = {
         },
       },
     },
-  },
-};
-export const DIALECTED_MEMBER_INCLUDES = {
-  dialect: {
-    include: DIALECT_INCLUDES,
   },
 };
