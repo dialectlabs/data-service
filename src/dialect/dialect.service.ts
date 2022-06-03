@@ -23,6 +23,8 @@ import { WalletService } from '../wallet/wallet.service';
 import { DialectAddressProvider } from './dialect-address-provider';
 import _ from 'lodash';
 
+const DEFAULT_MESSAGES_PAGE_SIZE = 50;
+
 @Injectable()
 export class DialectService {
   constructor(
@@ -49,7 +51,16 @@ export class DialectService {
           }),
         },
       },
-      include: DIALECT_INCLUDES,
+      include: {
+        ...DIALECT_INCLUDES,
+        messages: {
+          ...DIALECT_INCLUDES.messages,
+          orderBy: {
+            timestamp: 'desc',
+          },
+          take: 50,
+        },
+      },
     });
   }
 
@@ -66,7 +77,16 @@ export class DialectService {
           },
         },
       },
-      include: DIALECT_INCLUDES,
+      include: {
+        ...DIALECT_INCLUDES,
+        messages: {
+          ...DIALECT_INCLUDES.messages,
+          orderBy: {
+            timestamp: 'desc',
+          },
+          take: 50,
+        },
+      },
     });
   }
 
@@ -93,7 +113,16 @@ export class DialectService {
           },
         },
       },
-      include: DIALECT_INCLUDES,
+      include: {
+        ...DIALECT_INCLUDES,
+        messages: {
+          ...DIALECT_INCLUDES.messages,
+          orderBy: {
+            timestamp: 'desc',
+          },
+          take: DEFAULT_MESSAGES_PAGE_SIZE,
+        },
+      },
     });
   }
 
@@ -128,7 +157,6 @@ export class DialectService {
     // TODO: Reduce includes in this query since less is needed.
     const text = command.text;
     const dialect = await this.findOrThrow(dialectPublicKey, wallet);
-    // Assert wallet has write privileges
     const canWrite = this.checkWalletCanWriteTo(wallet, dialect);
     await this.postMessage(canWrite, dialect.id, text);
     return this.findOrThrow(dialectPublicKey, wallet);
