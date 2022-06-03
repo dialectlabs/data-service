@@ -61,6 +61,9 @@ export class DialectService {
           take: 50,
         },
       },
+      orderBy: {
+        updatedAt: 'desc',
+      },
     });
   }
 
@@ -187,20 +190,31 @@ export class DialectService {
     return dialect;
   }
 
-  postMessage(
+  async postMessage(
     member: Member,
     dialectId: string,
     text: number[],
   ): Promise<Message> {
     const timestamp = new Date();
-    return this.prisma.message.create({
-      data: {
-        dialectId,
-        memberId: member.id,
-        text: Buffer.from(text),
-        timestamp, // TODO: deal with last message ts and index in dialect
-      },
-    });
+    const [message] = await this.prisma.$transaction([
+      this.prisma.message.create({
+        data: {
+          dialectId,
+          memberId: member.id,
+          text: Buffer.from(text),
+          timestamp, // TODO: deal with last message ts and index in dialect
+        },
+      }),
+      this.prisma.dialect.update({
+        where: {
+          id: dialectId,
+        },
+        data: {
+          updatedAt: timestamp,
+        },
+      }),
+    ]);
+    return message;
   }
 
   private async getMemberWallets(members: DialectMemberDto[]) {
