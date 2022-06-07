@@ -1,11 +1,14 @@
 import { Duration } from 'luxon';
 import {
   NodeDialectWalletAdapter,
+  DialectWalletAdapterWrapper,
   DialectWalletAdapterEd25519TokenSigner,
   Auth,
 } from '@dialectlabs/sdk';
 
-const wallet = NodeDialectWalletAdapter.create();
+const wallet = DialectWalletAdapterWrapper.create(
+  NodeDialectWalletAdapter.create(),
+);
 
 (async () => {
   const token = await Auth.tokens.generate(
