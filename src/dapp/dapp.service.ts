@@ -30,14 +30,6 @@ export class DappService {
   }
 
   async findDappAdresses(dappPublicKey: string) {
-    try {
-      new PublicKey(dappPublicKey);
-    } catch (e: any) {
-      throw new HttpException(
-        `Invalid format dapp public_key ${dappPublicKey}, please check your inputs and try again.`,
-        HttpStatus.BAD_REQUEST,
-      );
-    }
     return this.prisma.dappAddress.findMany({
       where: {
         enabled: true,
@@ -55,6 +47,14 @@ export class DappService {
             wallet: true,
           },
         },
+      },
+    });
+  }
+
+  async create(publicKey: string) {
+    return this.prisma.dapp.create({
+      data: {
+        publicKey,
       },
     });
   }
