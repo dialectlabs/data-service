@@ -15,7 +15,7 @@ import { LoggerModule } from 'nestjs-pino';
     LoggerModule.forRoot({
       pinoHttp: {
         autoLogging: true,
-        customLogLevel: (_, res) => {
+        customLogLevel: (msg, res) => {
           if (res.statusCode && res.statusCode >= 400) {
             return 'error';
           }
@@ -29,7 +29,7 @@ import { LoggerModule } from 'nestjs-pino';
           options: {
             colorize: process.env.ENVIRONMENT === 'local-development',
             translateTime: true,
-            singleLine: true,
+            singleLine: false,
             ignore: 'pid,hostname',
           },
         },
