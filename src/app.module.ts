@@ -14,15 +14,13 @@ import { LoggerModule } from 'nestjs-pino';
     ConfigModule.forRoot(),
     LoggerModule.forRoot({
       pinoHttp: {
-        autoLogging: true,
-        customLogLevel: (msg, res) => {
-          if (res.statusCode && res.statusCode >= 400) {
-            return 'error';
-          }
-          if (process.env.ENVIRONMENT !== 'production') {
-            return 'info';
-          }
-          return 'silent';
+        autoLogging: {
+          ignore: (msg) => {
+            if (msg.statusCode && msg.statusCode >= 400) {
+              return false;
+            }
+            return process.env.ENVIRONMENT === 'production';
+          },
         },
         transport: {
           target: 'pino-pretty',
