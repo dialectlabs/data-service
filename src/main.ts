@@ -8,6 +8,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { PrismaService } from './prisma/prisma.service';
 import { Logger } from 'nestjs-pino';
+import { PrismaExceptionInterceptor } from './middleware/prisma-error-interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -26,6 +27,8 @@ async function bootstrap() {
   app.enableVersioning({
     type: VersioningType.URI,
   });
+  app.useGlobalInterceptors(new PrismaExceptionInterceptor());
+
   const prismaService = app.get(PrismaService);
   prismaService.enableShutdownHooks(app);
 
