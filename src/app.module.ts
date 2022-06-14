@@ -14,8 +14,16 @@ import { LoggerModule } from 'nestjs-pino';
     ConfigModule.forRoot(),
     LoggerModule.forRoot({
       pinoHttp: {
-        autoLogging: process.env.ENVIRONMENT !== 'production',
-        redact: ['req.headers'],
+        autoLogging: true,
+        customLogLevel: (_, res) => {
+          if (res.statusCode && res.statusCode >= 400) {
+            return 'error';
+          }
+          if (process.env.ENVIRONMENT !== 'production') {
+            return 'info';
+          }
+          return 'silent';
+        },
         transport: {
           target: 'pino-pretty',
           options: {
