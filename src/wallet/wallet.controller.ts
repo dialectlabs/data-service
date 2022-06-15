@@ -172,6 +172,7 @@ export class WalletController {
             value,
             walletId: wallet.id,
             verificationCode: code,
+            verified: type === 'wallet',
           },
         });
       } catch (e: any) {
