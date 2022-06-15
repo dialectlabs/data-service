@@ -27,7 +27,7 @@ import { LoggerModule } from 'nestjs-pino';
           options: {
             colorize: process.env.ENVIRONMENT === 'local-development',
             translateTime: true,
-            singleLine: false,
+            singleLine: true,
             ignore: 'pid,hostname',
           },
         },
