@@ -166,7 +166,7 @@ export class DappController {
   ) {
     if (dappPublicKey !== principal.wallet.publicKey) {
       throw new ForbiddenException(
-        `Not authorized to get addresses for ${dappPublicKey}.`,
+        `Not authorized to perform operations for dapp ${dappPublicKey}.`,
       );
     }
   }
