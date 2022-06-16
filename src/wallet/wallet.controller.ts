@@ -123,6 +123,7 @@ export class WalletController {
         verified: address.verified,
         dapp: dapp.publicKey,
         enabled,
+        value: wallet ?? address.value,
       };
     });
   }
@@ -313,6 +314,7 @@ export class WalletController {
       verified: dappAddress.address.verified,
       dapp: dapp.publicKey,
       enabled: dappAddress.enabled,
+      value: dappAddress.address.value,
     };
   }
 
@@ -440,6 +442,7 @@ export class WalletController {
       verified: dappAddress.address.verified,
       dapp: dappAddress.dapp.publicKey,
       enabled: dappAddress.enabled,
+      value: dappAddress.address.value,
     };
   }
 
