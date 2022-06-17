@@ -5,6 +5,19 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import { Wallet } from '@prisma/client';
+
+export class WalletDto {
+  readonly id!: string;
+  readonly publicKey!: string;
+}
+
+export function toWalletDto(wallet: Wallet): WalletDto {
+  return {
+    id: wallet.id,
+    publicKey: wallet.publicKey,
+  };
+}
 
 // Addresses
 
@@ -79,6 +92,7 @@ export class VerifyAddressDto {
   readonly code!: string;
   readonly addressId!: string;
 }
+
 export class VerifySmsDto {
   readonly code!: string;
   readonly addressId!: string;

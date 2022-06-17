@@ -130,11 +130,7 @@ export class DialectService {
   }
 
   async delete(publicKey: string, wallet: Wallet) {
-    const dialect = await this.find(publicKey, wallet);
-    if (!dialect)
-      throw new NotFoundException(
-        `No Dialect ${publicKey} found for Wallet ${wallet.publicKey}, cannot delete.`,
-      );
+    const dialect = await this.findOrThrow(publicKey, wallet);
     if (
       !dialect.members.find(
         (m: WalletedMember) =>

@@ -39,7 +39,7 @@ export function IsPublicKey(validationOptions?: ValidationOptions) {
       options: validationOptions,
       validator: {
         validate(value: any) {
-          return typeof value === 'string' && isPublicKey(value); // you can return a Promise<boolean> here as well, if you want to make async validation
+          return typeof value === 'string' && isPublicKey(value);
         },
         defaultMessage(validationArguments?: ValidationArguments): string {
           return `Invalid format public key ${validationArguments?.value} for parameter ${validationArguments?.property}.`;
