@@ -45,7 +45,7 @@ export class DialectDto {
       members: dialect.members.map(MemberDto.fromMember),
       messages: dialect.messages.map(MessageDto.fromMessage),
       nextMessageIdx: 0,
-      lastMessageTimestamp: 0,
+      lastMessageTimestamp: dialect.updatedAt.getTime(),
       encrypted: dialect.encrypted,
     };
   }
