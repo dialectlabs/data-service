@@ -363,6 +363,9 @@ export class WalletController {
         where: {
           id: addressId,
           walletId: wallet.id,
+          NOT: {
+            type: 'wallet',
+          },
         },
         data: {
           value,
