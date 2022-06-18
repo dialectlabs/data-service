@@ -92,8 +92,13 @@ export class WalletAddressesControllerV1 {
     @Param() { addressId }: AddressResourceId,
     @Body() command: PatchAddressCommand,
   ): Promise<AddressDto> {
-    const existingAddress = await this.prisma.address.findFirst({
-      where: { id: addressId, walletId: wallet.id },
+    const existingAddress = await this.prisma.address.findUnique({
+      where: {
+        walletId_id: {
+          walletId: wallet.id,
+          id: addressId,
+        },
+      },
       rejectOnNotFound: true,
     });
     const newAddressValue = command.value && command.value.toLowerCase().trim();
@@ -108,7 +113,10 @@ export class WalletAddressesControllerV1 {
     const verificationCode = generateVerificationCode();
     const walletUpdated = await this.prisma.address.update({
       where: {
-        id: addressId,
+        walletId_id: {
+          walletId: wallet.id,
+          id: addressId,
+        },
       },
       data: {
         ...(verificationNeeded && {
@@ -132,10 +140,16 @@ export class WalletAddressesControllerV1 {
   }
 
   @Delete('/:addressId')
-  async delete(@Param() { addressId }: AddressResourceId) {
+  async delete(
+    @AuthPrincipal() { wallet }: Principal,
+    @Param() { addressId }: AddressResourceId,
+  ) {
     await this.prisma.address.delete({
       where: {
-        id: addressId,
+        walletId_id: {
+          walletId: wallet.id,
+          id: addressId,
+        },
       },
     });
   }

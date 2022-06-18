@@ -52,6 +52,8 @@ model Address {
 
   // meta
   @@unique([walletId, type])
+  @@unique([walletId, id])
+
   @@map("addresses")
 }
 
