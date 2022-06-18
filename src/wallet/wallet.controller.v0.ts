@@ -19,7 +19,7 @@ import {
   PostDappAddressDto,
   PutDappAddressDto,
   VerifyAddressDto,
-} from './wallet.controller.dto';
+} from './wallet.controller.v0.dto';
 import { DappService } from '../dapp/dapp.service';
 import { AuthenticationGuard } from '../auth/authentication.guard';
 import { MailVerificationService } from '../mail/mail.service';
@@ -33,7 +33,7 @@ import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
   path: 'wallets',
   version: '0',
 })
-export class WalletController {
+export class WalletControllerV0 {
   constructor(
     private readonly prisma: PrismaService,
     private readonly dappService: DappService,
