@@ -4,6 +4,7 @@ import {
   ExecutionContext,
   Injectable,
   NestInterceptor,
+  NotFoundException,
 } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { catchError, Observable, throwError } from 'rxjs';
@@ -21,7 +22,18 @@ export class PrismaExceptionInterceptor implements NestInterceptor {
           return throwError(
             () =>
               new ConflictException({
-                message: 'Resource already exists',
+                message: 'Resource already exists, please verify your inputs.',
+              }),
+          );
+        }
+        if (
+          e instanceof PrismaClientKnownRequestError &&
+          e.code === PrismaError.RecordsNotFound
+        ) {
+          return throwError(
+            () =>
+              new NotFoundException({
+                message: 'Resource not found, please verify your inputs.',
               }),
           );
         }
