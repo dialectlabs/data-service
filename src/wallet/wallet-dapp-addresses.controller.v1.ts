@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   NotFoundException,
   Param,
@@ -63,6 +62,31 @@ export class WalletDappAddressesControllerV1 {
       },
     });
     return dappAddressses.map((it) => toDappAddressDto(it));
+  }
+
+  @Get('/:dappAddressId')
+  async findOne(
+    @AuthPrincipal() { wallet }: Principal,
+    @Param() { dappAddressId }: DappAddressResourceId,
+  ): Promise<DappAddressDto> {
+    const dappAddress = await this.prisma.dappAddress.findFirst({
+      where: {
+        id: dappAddressId,
+        address: {
+          walletId: wallet.id,
+        },
+      },
+      include: {
+        dapp: true,
+        address: {
+          include: {
+            wallet: true,
+          },
+        },
+      },
+      rejectOnNotFound: (e) => new NotFoundException(e),
+    });
+    return toDappAddressDto(dappAddress);
   }
 
   @Post('/')
@@ -159,7 +183,7 @@ export class WalletDappAddressesControllerV1 {
     @Param() { dappAddressId }: DappAddressResourceId,
     @Body() command: PatchDappAddressCommand,
   ): Promise<DappAddressDto> {
-    await this.checkDappAddressCanBeManagedBy(dappAddressId, wallet);
+    await this.findOne({ wallet }, { dappAddressId });
     const dappAddress = await this.prisma.dappAddress.update({
       where: {
         id: dappAddressId,
@@ -184,37 +208,14 @@ export class WalletDappAddressesControllerV1 {
     @AuthPrincipal() { wallet }: Principal,
     @Param() { dappAddressId }: DappAddressResourceId,
   ) {
-    await this.checkDappAddressCanBeManagedBy(dappAddressId, wallet);
-    await this.prisma.dappAddress.delete({
+    await this.findOne({ wallet }, { dappAddressId });
+    await this.prisma.dappAddress.deleteMany({
       where: {
         id: dappAddressId,
-      },
-    });
-  }
-
-  private async checkDappAddressCanBeManagedBy(
-    dappAddressId: string,
-    wallet: Wallet,
-  ) {
-    const dappAddress = await this.prisma.dappAddress.findFirst({
-      where: {
-        id: dappAddressId,
-      },
-      include: {
         address: {
-          select: {
-            walletId: true,
-          },
+          walletId: wallet.id,
         },
       },
     });
-    if (!dappAddress) {
-      throw new NotFoundException(`Dapp address ${dappAddress} not found`);
-    }
-    if (dappAddress.address.walletId !== wallet.id) {
-      throw new ForbiddenException(
-        `Wallet ${wallet.publicKey} is not allowed to manage dapp address ${dappAddress}`,
-      );
-    }
   }
 }

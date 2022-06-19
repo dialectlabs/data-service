@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Post,
@@ -54,6 +55,26 @@ export class WalletAddressesControllerV1 {
     return addresses.map((it) => toAddressDto(it));
   }
 
+  @Get('/:addressId')
+  async findOne(
+    @AuthPrincipal() { wallet }: Principal,
+    @Param() { addressId }: AddressResourceId,
+  ): Promise<AddressDto> {
+    const address = await this.prisma.address.findUnique({
+      where: {
+        walletId_id: {
+          walletId: wallet.id,
+          id: addressId,
+        },
+      },
+      include: {
+        wallet: true,
+      },
+      rejectOnNotFound: (e) => new NotFoundException(e.message),
+    });
+    return toAddressDto(address);
+  }
+
   @Post('/')
   async create(
     @AuthPrincipal() { wallet }: Principal,
@@ -92,15 +113,7 @@ export class WalletAddressesControllerV1 {
     @Param() { addressId }: AddressResourceId,
     @Body() command: PatchAddressCommand,
   ): Promise<AddressDto> {
-    const existingAddress = await this.prisma.address.findUnique({
-      where: {
-        walletId_id: {
-          walletId: wallet.id,
-          id: addressId,
-        },
-      },
-      rejectOnNotFound: true,
-    });
+    const existingAddress = await this.findOne({ wallet }, { addressId });
     const newAddressValue = command.value && command.value.toLowerCase().trim();
     const addressValueChanged = Boolean(
       newAddressValue && newAddressValue !== existingAddress.value,
@@ -108,7 +121,7 @@ export class WalletAddressesControllerV1 {
     const verificationNeeded =
       addressValueChanged &&
       WalletAddressesControllerV1.addressVerificationNeededAfterChange(
-        existingAddress.type as PersistedAddressType,
+        existingAddress.type,
       );
     const verificationCode = generateVerificationCode();
     const walletUpdated = await this.prisma.address.update({
@@ -144,6 +157,7 @@ export class WalletAddressesControllerV1 {
     @AuthPrincipal() { wallet }: Principal,
     @Param() { addressId }: AddressResourceId,
   ) {
+    await this.findOne({ wallet }, { addressId });
     await this.prisma.address.delete({
       where: {
         walletId_id: {
