@@ -1,9 +1,9 @@
 import { AddressDto, toAddressDto } from '../addresses/address.controller.dto';
-import { DappDto, toDappDto } from '../dapp/dapp.controller.dto';
 import { Address, Dapp, DappAddress, Wallet } from '@prisma/client';
 import { extractTelegramChatId } from './dapp-address.service';
 import { IsPublicKey } from '../middleware/public-key-validation';
 import { IsBoolean, IsOptional, IsUUID } from 'class-validator';
+import { DappDto, toDappDto } from '../dapp/dapp.controller.v1.dto';
 
 export class DappAddressDto {
   readonly id!: string;

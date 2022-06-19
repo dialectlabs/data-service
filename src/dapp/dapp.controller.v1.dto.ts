@@ -1,13 +1,6 @@
 import { IsPublicKey } from '../middleware/public-key-validation';
 import { Dapp } from '@prisma/client';
 
-export class SubscriberDto {
-  resourceId!: string;
-  email?: string;
-  telegramId?: string;
-  smsNumber?: string;
-}
-
 export class DappDto {
   id!: string;
   publicKey!: string;
