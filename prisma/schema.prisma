@@ -86,7 +86,7 @@ model DappAddress {
 
   // relations
   addressId String  @map("address_id") @db.Uuid
-  address   Address @relation(fields: [addressId], references: [id])
+  address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   dappId    String  @map("dapp_id") @db.Uuid
   dapp      Dapp    @relation(fields: [dappId], references: [id])
 
