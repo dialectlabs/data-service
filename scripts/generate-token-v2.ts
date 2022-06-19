@@ -15,6 +15,6 @@ const wallet = DialectWalletAdapterWrapper.create(
     new DialectWalletAdapterEd25519TokenSigner(wallet),
     Duration.fromObject({ minutes: 120 }),
   );
-  console.log(token.rawValue);
+  console.log(JSON.stringify(token, null, 2));
   console.log(token.body.sub);
 })();
