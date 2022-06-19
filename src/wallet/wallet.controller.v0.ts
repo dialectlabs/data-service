@@ -12,7 +12,7 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   DappAddressDto,
@@ -48,6 +48,10 @@ export class WalletControllerV0 {
   @UseGuards(AuthenticationGuard)
   @ApiBearerAuth()
   @Delete(':public_key/addresses/:id')
+  @ApiOperation({
+    deprecated: true,
+    description: 'Use /v1 api instead',
+  })
   async delete(
     @AuthPrincipal() { wallet }: Principal,
     @Param('public_key', PublicKeyValidationPipe) publicKey: string,
@@ -88,6 +92,10 @@ export class WalletControllerV0 {
    Get a list of addresses on file for a given dapp. N.b. this only returns the type (e.g. 'email'), and whether it's verified and enabled; it does *NOT* return the value (e.g. 'chris@dialect.to').
    */
   @Get(':public_key/dapps/:dapp/addresses')
+  @ApiOperation({
+    deprecated: true,
+    description: 'Use /v1 api instead',
+  })
   async get(
     @AuthPrincipal() { wallet }: Principal,
     @Param('public_key', PublicKeyValidationPipe) publicKey: string,
@@ -140,6 +148,10 @@ export class WalletControllerV0 {
   @UseGuards(AuthenticationGuard)
   @ApiBearerAuth()
   @Post(':public_key/dapps/:dapp/addresses')
+  @ApiOperation({
+    deprecated: true,
+    description: 'Use /v1 api instead',
+  })
   async post(
     @AuthPrincipal() { wallet }: Principal,
     @Param('public_key', PublicKeyValidationPipe) publicKey: string,
@@ -329,6 +341,10 @@ export class WalletControllerV0 {
   @UseGuards(AuthenticationGuard)
   @ApiBearerAuth()
   @Put(':public_key/dapps/:dapp/addresses/:id')
+  @ApiOperation({
+    deprecated: true,
+    description: 'Use /v1 api instead',
+  })
   async put(
     @AuthPrincipal() { wallet }: Principal,
     @Param('id') id: string,
@@ -452,6 +468,10 @@ export class WalletControllerV0 {
   @UseGuards(AuthenticationGuard)
   @ApiBearerAuth()
   @Post(':public_key/dapps/:dapp/addresses/:id/verify')
+  @ApiOperation({
+    deprecated: true,
+    description: 'Use /v1 api instead',
+  })
   async verify(
     @AuthPrincipal() { wallet }: Principal,
     @Param('id') id: string,
@@ -518,6 +538,10 @@ export class WalletControllerV0 {
   @UseGuards(AuthenticationGuard)
   @ApiBearerAuth()
   @Post(':public_key/dapps/:dapp/addresses/:id/resendCode')
+  @ApiOperation({
+    deprecated: true,
+    description: 'Use /v1 api instead',
+  })
   async resendCode(
     @AuthPrincipal() { wallet }: Principal,
     @Param('id') id: string,

@@ -84,7 +84,7 @@ export class WalletDappAddressesControllerV1 {
           },
         },
       },
-      rejectOnNotFound: (e) => new NotFoundException(e),
+      rejectOnNotFound: (e) => new NotFoundException(e.message),
     });
     return toDappAddressDto(dappAddress);
   }
