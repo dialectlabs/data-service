@@ -7,7 +7,7 @@ import { DappControllerV1 } from './dapp.controller.v1';
 
 @Module({
   imports: [PrismaModule],
-  providers: [DappService],
+  providers: [DappService, DappControllerV1],
   exports: [DappService],
   controllers: [DappControllerV0, DappControllerV1],
 })

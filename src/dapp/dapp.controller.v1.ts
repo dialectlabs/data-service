@@ -3,16 +3,13 @@ import {
   Controller,
   ForbiddenException,
   Get,
+  NotFoundException,
   Param,
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
-
-import { DappService } from './dapp.service';
-import { PublicKeyValidationPipe } from '../middleware/public-key-validation';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthenticationGuard } from '../auth/authentication.guard';
-import { DappAuthenticationGuard } from '../auth/dapp-authentication.guard';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 import {
   DappAddressDto,
@@ -21,33 +18,58 @@ import {
 import {
   CreateDappCommand,
   DappDto,
+  DappResourceId,
   toDappDto,
 } from './dapp.controller.v1.dto';
+import { PrismaService } from '../prisma/prisma.service';
+import { DappService } from './dapp.service';
 
 @ApiTags('Dapps')
 @Controller({
   path: 'dapps',
   version: '1',
 })
+@UseGuards(AuthenticationGuard)
+@ApiBearerAuth()
 export class DappControllerV1 {
-  constructor(private readonly dappService: DappService) {}
+  constructor(
+    private readonly dappService: DappService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Post()
-  @UseGuards(AuthenticationGuard)
   async create(
     @AuthPrincipal() principal: Principal,
     @Body() command: CreateDappCommand,
   ): Promise<DappDto> {
     DappControllerV1.checkOperationAllowed(command.publicKey, principal);
-    const dapp = await this.dappService.create(command.publicKey);
+    const dapp = await this.prisma.dapp.create({
+      data: {
+        publicKey: command.publicKey,
+      },
+    });
     return toDappDto(dapp);
   }
 
-  @Get(':public_key/dappAddresses')
-  @UseGuards(AuthenticationGuard, DappAuthenticationGuard)
-  async dappAddresses(
+  @Get('/:dappPublicKey')
+  async findOne(
     @AuthPrincipal() principal: Principal,
-    @Param('public_key', PublicKeyValidationPipe) dappPublicKey: string,
+    @Param() { dappPublicKey }: DappResourceId,
+  ): Promise<DappDto> {
+    DappControllerV1.checkOperationAllowed(dappPublicKey, principal);
+    const dapp = await this.prisma.dapp.findUnique({
+      where: {
+        publicKey: dappPublicKey,
+      },
+      rejectOnNotFound: (e) => new NotFoundException(e.message),
+    });
+    return toDappDto(dapp);
+  }
+
+  @Get(':dappPublicKey/dappAddresses')
+  async findAllDappAddresses(
+    @AuthPrincipal() principal: Principal,
+    @Param() { dappPublicKey }: DappResourceId,
   ): Promise<DappAddressDto[]> {
     DappControllerV1.checkOperationAllowed(dappPublicKey, principal);
     const dappAddresses = await this.dappService.findDappAdresses(
@@ -62,7 +84,7 @@ export class DappControllerV1 {
   ) {
     if (dappPublicKey !== principal.wallet.publicKey) {
       throw new ForbiddenException(
-        `Not authorized to perform operations for dapp ${dappPublicKey}.`,
+        `Wallet ${principal.wallet.publicKey} not authorized to perform operations for dapp ${dappPublicKey}.`,
       );
     }
   }

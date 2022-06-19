@@ -1,22 +1,28 @@
 // TODO: Enforce UUID format in some kind of middleware exception handling.
 // Consolidate exception handling into single wrapper
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SubscriberDto } from './dapp.controller.v0.dto';
 import _ from 'lodash';
 import { DappService } from './dapp.service';
 import { PublicKeyValidationPipe } from '../middleware/public-key-validation';
 import { AuthenticationGuard } from '../auth/authentication.guard';
-import { DappAuthenticationGuard } from '../auth/dapp-authentication.guard';
 import { extractTelegramChatId } from '../dapp-addresses/dapp-address.service';
+import { DappControllerV1 } from './dapp.controller.v1';
+import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 
 @ApiTags('Dapps')
 @Controller({
   path: 'dapps',
   version: '0',
 })
+@UseGuards(AuthenticationGuard)
+@ApiBearerAuth()
 export class DappControllerV0 {
-  constructor(private readonly dappService: DappService) {}
+  constructor(
+    private readonly dappService: DappService,
+    private readonly dappControllerV1: DappControllerV1,
+  ) {}
 
   /**
    Dapp Subscriber Addresses
@@ -24,14 +30,15 @@ export class DappControllerV0 {
    Returns addresses ONLY if verified and enabled.
    */
   @Get(':public_key/subscribers')
-  @UseGuards(AuthenticationGuard, DappAuthenticationGuard)
   @ApiOperation({
     deprecated: true,
-    description: 'Use /:public_key/dappAddresses instead',
+    description: 'Use /v1 api instead',
   })
   async get(
+    @AuthPrincipal() principal: Principal,
     @Param('public_key', PublicKeyValidationPipe) dappPublicKey: string,
   ): Promise<SubscriberDto[]> {
+    await this.dappControllerV1.findOne(principal, { dappPublicKey });
     const dappAddresses = await this.dappService.findDappAdresses(
       dappPublicKey,
     );

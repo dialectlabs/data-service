@@ -17,3 +17,8 @@ export class CreateDappCommand {
   @IsPublicKey()
   readonly publicKey!: string;
 }
+
+export class DappResourceId {
+  @IsPublicKey()
+  readonly dappPublicKey!: string;
+}
