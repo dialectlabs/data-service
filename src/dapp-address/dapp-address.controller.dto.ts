@@ -39,7 +39,7 @@ export class FindDappAddressesQuery {
   readonly dappPublicKey?: string;
   @IsOptional()
   @IsUUID(4, { each: true })
-  readonly addressIds?: string;
+  readonly addressIds?: string[];
 }
 
 export class CreateDappAddressCommand {
