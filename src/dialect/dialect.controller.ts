@@ -16,13 +16,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateDialectCommandDto,
   DialectAccountDto,
+  DialectResourceId,
   FindDialectQuery,
   SendMessageCommandDto,
 } from './dialect.controller.dto';
 import { AuthenticationGuard } from '../auth/authentication.guard';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 import { DialectService } from './dialect.service';
-import { PublicKeyValidationPipe } from '../middleware/public-key-validation';
 
 @ApiTags('Dialects')
 @ApiBearerAuth()
@@ -55,10 +55,10 @@ export class DialectController {
     return DialectAccountDto.fromDialect(dialect);
   }
 
-  @Get('/:public_key')
+  @Get('/:dialectPublicKey')
   async getDialect(
     @AuthPrincipal() { wallet }: Principal,
-    @Param('public_key', PublicKeyValidationPipe) dialectPublicKey: string,
+    @Param() { dialectPublicKey }: DialectResourceId,
   ) {
     const dialect = await this.dialectService.find(dialectPublicKey, wallet);
     if (!dialect)
@@ -68,19 +68,19 @@ export class DialectController {
     return DialectAccountDto.fromDialect(dialect);
   }
 
-  @Delete('/:public_key')
+  @Delete('/:dialectPublicKey')
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(
     @AuthPrincipal() { wallet }: Principal,
-    @Param('public_key', PublicKeyValidationPipe) dialectPublicKey: string,
+    @Param() { dialectPublicKey }: DialectResourceId,
   ) {
     await this.dialectService.delete(dialectPublicKey, wallet);
   }
 
-  @Post('/:public_key/messages')
+  @Post('/:dialectPublicKey/messages')
   async sendMessage(
     @AuthPrincipal() { wallet }: Principal,
-    @Param('public_key', PublicKeyValidationPipe) dialectPublicKey: string,
+    @Param() { dialectPublicKey }: DialectResourceId,
     @Body() command: SendMessageCommandDto,
   ) {
     const dialect = await this.dialectService.sendMessage(
