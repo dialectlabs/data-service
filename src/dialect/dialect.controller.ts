@@ -29,7 +29,7 @@ import { DialectService } from './dialect.service';
 @UseGuards(AuthenticationGuard)
 @Controller({
   path: 'dialects',
-  version: '0',
+  version: '1',
 })
 export class DialectController {
   constructor(
