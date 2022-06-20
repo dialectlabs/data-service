@@ -7,7 +7,7 @@ import _ from 'lodash';
 import { DappService } from './dapp.service';
 import { PublicKeyValidationPipe } from '../middleware/public-key-validation';
 import { AuthenticationGuard } from '../auth/authentication.guard';
-import { extractTelegramChatId } from '../dapp-addresses/dapp-address.service';
+import { extractTelegramChatId } from '../dapp-address/dapp-address.service';
 import { DappControllerV1 } from './dapp.controller.v1';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 

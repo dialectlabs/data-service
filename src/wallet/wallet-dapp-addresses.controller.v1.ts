@@ -19,14 +19,14 @@ import {
   FindDappAddressesQuery,
   PatchDappAddressCommand,
   toDappAddressDto,
-} from '../dapp-addresses/dapp-address.controller.dto';
+} from '../dapp-address/dapp-address.controller.dto';
 import { AuthenticationGuard } from '../auth/authentication.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { Address, Dapp, DappAddress, Wallet } from '@prisma/client';
-import { PersistedAddressType } from '../addresses/address.repository';
+import { PersistedAddressType } from '../address/address.repository';
 
 // https://stackoverflow.com/questions/35719797/is-using-magic-me-self-resource-identifiers-going-against-rest-principles
-@ApiTags('Wallet dapp addresses')
+@ApiTags('Wallet dapp address')
 @ApiBearerAuth()
 @UseGuards(AuthenticationGuard)
 @Controller({

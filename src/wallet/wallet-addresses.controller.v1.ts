@@ -3,10 +3,10 @@ import {
   Controller,
   Delete,
   Get,
-  NotFoundException,
   Param,
   Patch,
   Post,
+  UnprocessableEntityException,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -19,16 +19,19 @@ import {
   fromAddressTypeDto,
   PatchAddressCommand,
   toAddressDto,
-} from '../addresses/address.controller.dto';
+} from '../address/address.controller.dto';
 import { AuthenticationGuard } from '../auth/authentication.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailVerificationService } from '../mail/mail.service';
 import { SmsVerificationService } from '../sms/sms.service';
 import { generateVerificationCode } from '../utils';
-import { PersistedAddressType } from '../addresses/address.repository';
+import { PersistedAddressType } from '../address/address.repository';
+import { VerifyAddressCommandDto } from './wallet-addresses.controller.v1.dto';
+import { AddressService } from '../address/address.service';
+import { Duration } from 'luxon';
 
 // https://stackoverflow.com/questions/35719797/is-using-magic-me-self-resource-identifiers-going-against-rest-principles
-@ApiTags('Wallet addresses')
+@ApiTags('Wallet address')
 @ApiBearerAuth()
 @UseGuards(AuthenticationGuard)
 @Controller({
@@ -38,20 +41,14 @@ import { PersistedAddressType } from '../addresses/address.repository';
 export class WalletAddressesControllerV1 {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly addressService: AddressService,
     private readonly mailService: MailVerificationService,
     private readonly smsService: SmsVerificationService,
   ) {}
 
   @Get('/')
   async findAll(@AuthPrincipal() { wallet }: Principal): Promise<AddressDto[]> {
-    const addresses = await this.prisma.address.findMany({
-      where: {
-        walletId: wallet.id,
-      },
-      include: {
-        wallet: true,
-      },
-    });
+    const addresses = await this.addressService.findAll(wallet.id);
     return addresses.map((it) => toAddressDto(it));
   }
 
@@ -60,18 +57,7 @@ export class WalletAddressesControllerV1 {
     @AuthPrincipal() { wallet }: Principal,
     @Param() { addressId }: AddressResourceId,
   ): Promise<AddressDto> {
-    const address = await this.prisma.address.findUnique({
-      where: {
-        walletId_id: {
-          walletId: wallet.id,
-          id: addressId,
-        },
-      },
-      include: {
-        wallet: true,
-      },
-      rejectOnNotFound: (e) => new NotFoundException(e.message),
-    });
+    const address = await this.addressService.findOne(addressId, wallet.id);
     return toAddressDto(address);
   }
 
@@ -90,7 +76,10 @@ export class WalletAddressesControllerV1 {
         walletId: wallet.id,
         type: fromAddressTypeDto(command.type),
         verified: !verificationNeeded,
-        ...(verificationNeeded && { verificationCode }),
+        ...(verificationNeeded && {
+          verificationCode,
+          verificationCodeSentAt: new Date(),
+        }),
         value: command.value.toLowerCase().trim(),
       },
       include: {
@@ -113,7 +102,10 @@ export class WalletAddressesControllerV1 {
     @Param() { addressId }: AddressResourceId,
     @Body() command: PatchAddressCommand,
   ): Promise<AddressDto> {
-    const existingAddress = await this.findOne({ wallet }, { addressId });
+    const existingAddress = await this.addressService.findOne(
+      addressId,
+      wallet.id,
+    );
     const newAddressValue = command.value && command.value.toLowerCase().trim();
     const addressValueChanged = Boolean(
       newAddressValue && newAddressValue !== existingAddress.value,
@@ -121,10 +113,11 @@ export class WalletAddressesControllerV1 {
     const verificationNeeded =
       addressValueChanged &&
       WalletAddressesControllerV1.addressVerificationNeededAfterChange(
-        existingAddress.type,
+        existingAddress.type as PersistedAddressType,
       );
+
     const verificationCode = generateVerificationCode();
-    const walletUpdated = await this.prisma.address.update({
+    const addressUpdated = await this.prisma.address.update({
       where: {
         walletId_id: {
           walletId: wallet.id,
@@ -135,6 +128,7 @@ export class WalletAddressesControllerV1 {
         ...(verificationNeeded && {
           verified: false,
           verificationCode,
+          verificationCodeSentAt: new Date(),
         }),
         ...(addressValueChanged && { value: newAddressValue }),
       },
@@ -144,12 +138,12 @@ export class WalletAddressesControllerV1 {
     });
     if (verificationNeeded) {
       this.initiateAddressVerification(
-        walletUpdated.type as PersistedAddressType,
-        walletUpdated.value,
+        addressUpdated.type as PersistedAddressType,
+        addressUpdated.value,
         verificationCode,
       );
     }
-    return toAddressDto(walletUpdated);
+    return toAddressDto(addressUpdated);
   }
 
   @Delete('/:addressId')
@@ -157,7 +151,7 @@ export class WalletAddressesControllerV1 {
     @AuthPrincipal() { wallet }: Principal,
     @Param() { addressId }: AddressResourceId,
   ) {
-    await this.findOne({ wallet }, { addressId });
+    await this.addressService.findOne(addressId, wallet.id);
     await this.prisma.address.delete({
       where: {
         walletId_id: {
@@ -166,6 +160,119 @@ export class WalletAddressesControllerV1 {
         },
       },
     });
+  }
+
+  @Post('/:addressId/verification')
+  async verify(
+    @AuthPrincipal() { wallet }: Principal,
+    @Param() { addressId }: AddressResourceId,
+    @Body() command: VerifyAddressCommandDto,
+  ): Promise<AddressDto> {
+    const existingAddress = await this.addressService.findOne(
+      addressId,
+      wallet.id,
+    );
+    if (existingAddress.verified) {
+      return toAddressDto(existingAddress);
+    }
+    if (existingAddress.verificationAttempts >= 3) {
+      throw new UnprocessableEntityException(
+        `Verification failed, please resend verification code`,
+      );
+    }
+    const submittedVerificationCode = command.code.toLowerCase().trim();
+    if (submittedVerificationCode !== existingAddress.verificationCode) {
+      this.prisma.address.update({
+        where: {
+          walletId_id: {
+            walletId: wallet.id,
+            id: addressId,
+          },
+        },
+        data: {
+          verificationAttempts: {
+            increment: 1,
+          },
+        },
+      });
+      throw new UnprocessableEntityException(
+        `Incorrect verification code ${submittedVerificationCode}`,
+      );
+    }
+    const updated = await this.prisma.address.update({
+      where: {
+        walletId_id: {
+          walletId: wallet.id,
+          id: addressId,
+        },
+      },
+      data: {
+        verified: true,
+      },
+      include: {
+        wallet: true,
+      },
+    });
+    return toAddressDto(updated);
+  }
+
+  @Post('/:addressId/verification/resendCode')
+  async resendVerificationCode(
+    @AuthPrincipal() { wallet }: Principal,
+    @Param() { addressId }: AddressResourceId,
+  ): Promise<void> {
+    const existingAddress = await this.addressService.findOne(
+      addressId,
+      wallet.id,
+    );
+    if (existingAddress.verified) {
+      return;
+    }
+    if (
+      !(
+        existingAddress.verificationCodeSentAt &&
+        existingAddress.verificationCode
+      )
+    ) {
+      throw new UnprocessableEntityException(
+        `There's no existing verification code record.`,
+      );
+    }
+    const allowedResendInterval = Duration.fromObject({
+      seconds: 60,
+    }).toMillis();
+    const elapsedSinceLastAddressUpdate =
+      new Date().getTime() - existingAddress.verificationCodeSentAt?.getTime();
+    if (elapsedSinceLastAddressUpdate < allowedResendInterval) {
+      throw new UnprocessableEntityException(
+        `Please wait ${Math.ceil(
+          (allowedResendInterval - elapsedSinceLastAddressUpdate) / 60,
+        )} before resending code`,
+      );
+    }
+    const verificationCode = generateVerificationCode();
+    const addressUpdated = await this.prisma.address.update({
+      where: {
+        walletId_id: {
+          walletId: wallet.id,
+          id: addressId,
+        },
+      },
+      data: {
+        verified: false,
+        verificationCode,
+        verificationAttempts: 0,
+        verificationCodeSentAt: new Date(),
+      },
+      include: {
+        wallet: true,
+      },
+    });
+    this.initiateAddressVerification(
+      addressUpdated.type as PersistedAddressType,
+      addressUpdated.value,
+      verificationCode,
+    );
   }
 
   private static addressVerificationNeededAfterChange(

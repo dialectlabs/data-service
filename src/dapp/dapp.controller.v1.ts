@@ -14,7 +14,7 @@ import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 import {
   DappAddressDto,
   toDappAddressDto,
-} from '../dapp-addresses/dapp-address.controller.dto';
+} from '../dapp-address/dapp-address.controller.dto';
 import {
   CreateDappCommand,
   DappDto,

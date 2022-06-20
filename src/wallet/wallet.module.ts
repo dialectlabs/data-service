@@ -7,9 +7,16 @@ import { SmsVerificationModule } from 'src/sms/sms.module';
 import { WalletService } from './wallet.service';
 import { WalletAddressesControllerV1 } from './wallet-addresses.controller.v1';
 import { WalletDappAddressesControllerV1 } from './wallet-dapp-addresses.controller.v1';
+import { AddressModule } from '../address/address.module';
 
 @Module({
-  imports: [PrismaModule, DappModule, MailModule, SmsVerificationModule],
+  imports: [
+    PrismaModule,
+    AddressModule,
+    DappModule,
+    MailModule,
+    SmsVerificationModule,
+  ],
   exports: [WalletService],
   providers: [WalletService],
   controllers: [

@@ -1,4 +1,4 @@
-import { AddressDto, toAddressDto } from '../addresses/address.controller.dto';
+import { AddressDto, toAddressDto } from '../address/address.controller.dto';
 import { Address, Dapp, DappAddress, Wallet } from '@prisma/client';
 import { extractTelegramChatId } from './dapp-address.service';
 import { IsPublicKey } from '../middleware/public-key-validation';
