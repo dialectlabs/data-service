@@ -77,7 +77,7 @@ export class WalletAddressesControllerV1 {
     await this.addressService.delete(addressId, wallet.id);
   }
 
-  @Post('/:addressId/verification')
+  @Post('/:addressId/verify')
   async verify(
     @AuthPrincipal() { wallet }: Principal,
     @Param() { addressId }: AddressResourceId,
@@ -91,7 +91,7 @@ export class WalletAddressesControllerV1 {
     return AddressDto.from(address);
   }
 
-  @Post('/:addressId/verification/resendCode')
+  @Post('/:addressId/resendVerificationCode')
   async resendVerificationCode(
     @AuthPrincipal() { wallet }: Principal,
     @Param() { addressId }: AddressResourceId,
