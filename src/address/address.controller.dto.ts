@@ -77,7 +77,7 @@ export class AddressResourceId {
   readonly addressId!: string;
 }
 
-export class CreateAddressCommand {
+export class CreateAddressCommandDto {
   @IsString()
   // TODO: https://stackoverflow.com/questions/68610924/how-to-use-else-condition-in-validationif-decorator-nestjs-class-validator
   readonly value!: string;
@@ -85,7 +85,7 @@ export class CreateAddressCommand {
   readonly type!: AddressTypeDto;
 }
 
-export class PatchAddressCommand {
+export class PatchAddressCommandDto {
   @IsString()
   @IsOptional()
   // TODO: https://stackoverflow.com/questions/68610924/how-to-use-else-condition-in-validationif-decorator-nestjs-class-validator
