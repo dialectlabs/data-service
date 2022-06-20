@@ -30,8 +30,7 @@ import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 
 @ApiTags('Wallets')
 @Controller({
-  path: 'wallets',
-  version: '0',
+  path: 'v0/wallets',
 })
 export class WalletControllerV0 {
   constructor(

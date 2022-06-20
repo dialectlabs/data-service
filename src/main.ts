@@ -1,5 +1,6 @@
 import {
   INestApplication,
+  RequestMethod,
   ValidationPipe,
   VersioningType,
 } from '@nestjs/common';
@@ -22,6 +23,18 @@ async function bootstrap() {
   app.enableCors({
     origin: '*',
     methods: 'GET,HEAD,PUT,POST,DELETE',
+  });
+  app.setGlobalPrefix('api', {
+    exclude: [
+      {
+        method: RequestMethod.ALL,
+        path: 'v0/wallets/(.*)',
+      },
+      {
+        method: RequestMethod.ALL,
+        path: 'v0/dapps/(.*)',
+      },
+    ],
   });
   app.useGlobalPipes(new ValidationPipe());
   app.enableVersioning({
@@ -46,7 +59,7 @@ function configureSwagger(app: INestApplication) {
       .addBearerAuth()
       .build();
     const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('/', app, document);
+    SwaggerModule.setup('/api', app, document);
   }
 }
 

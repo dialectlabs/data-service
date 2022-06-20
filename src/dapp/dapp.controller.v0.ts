@@ -13,8 +13,7 @@ import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 
 @ApiTags('Dapps')
 @Controller({
-  path: 'dapps',
-  version: '0',
+  path: 'v0/dapps',
 })
 @UseGuards(AuthenticationGuard)
 @ApiBearerAuth()
