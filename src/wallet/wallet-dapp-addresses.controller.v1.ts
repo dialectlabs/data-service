@@ -45,6 +45,11 @@ export class WalletDappAddressesControllerV1 {
         address: {
           walletId: wallet.id,
         },
+        ...(query.addressIds && {
+          addressId: {
+            in: query.addressIds,
+          },
+        }),
         ...(query.dappPublicKey && {
           dapp: {
             publicKey: query.dappPublicKey,
