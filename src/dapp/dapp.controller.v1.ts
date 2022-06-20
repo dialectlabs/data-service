@@ -11,15 +11,11 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthenticationGuard } from '../auth/authentication.guard';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
-import {
-  DappAddressDto,
-  toDappAddressDto,
-} from '../dapp-address/dapp-address.controller.dto';
+import { DappAddressDto } from '../dapp-address/dapp-address.controller.dto';
 import {
   CreateDappCommand,
   DappDto,
   DappResourceId,
-  toDappDto,
 } from './dapp.controller.v1.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { DappService } from './dapp.service';
@@ -48,7 +44,7 @@ export class DappControllerV1 {
         publicKey: command.publicKey,
       },
     });
-    return toDappDto(dapp);
+    return DappDto.from(dapp);
   }
 
   @Get('/:dappPublicKey')
@@ -63,7 +59,7 @@ export class DappControllerV1 {
       },
       rejectOnNotFound: (e) => new NotFoundException(e.message),
     });
-    return toDappDto(dapp);
+    return DappDto.from(dapp);
   }
 
   @Get(':dappPublicKey/dappAddresses')
@@ -75,7 +71,7 @@ export class DappControllerV1 {
     const dappAddresses = await this.dappService.findDappAdresses(
       dappPublicKey,
     );
-    return dappAddresses.map((it) => toDappAddressDto(it));
+    return dappAddresses.map((it) => DappAddressDto.from(it));
   }
 
   private static checkOperationAllowed(

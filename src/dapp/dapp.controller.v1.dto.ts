@@ -4,13 +4,13 @@ import { Dapp } from '@prisma/client';
 export class DappDto {
   id!: string;
   publicKey!: string;
-}
 
-export function toDappDto(dapp: Dapp): DappDto {
-  return {
-    publicKey: dapp.publicKey,
-    id: dapp.id,
-  };
+  static from(dapp: Dapp): DappDto {
+    return {
+      publicKey: dapp.publicKey,
+      id: dapp.id,
+    };
+  }
 }
 
 export class CreateDappCommand {

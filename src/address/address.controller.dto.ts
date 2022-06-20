@@ -10,6 +10,17 @@ export class AddressDto {
   readonly verified!: boolean;
   readonly value!: string;
   readonly wallet!: WalletDto;
+
+  static from(address: Address & { wallet: Wallet }): AddressDto {
+    const wallet = address.wallet;
+    return {
+      id: address.id,
+      value: address.value,
+      type: toAddressTypeDto(address.type as PersistedAddressType),
+      verified: address.verified,
+      wallet: toWalletDto(wallet),
+    };
+  }
 }
 
 export enum AddressTypeDto {
@@ -17,19 +28,6 @@ export enum AddressTypeDto {
   Sms = 'SMS',
   Telegram = 'TELEGRAM',
   Wallet = 'WALLET',
-}
-
-export function toAddressDto(
-  address: Address & { wallet: Wallet },
-): AddressDto {
-  const wallet = address.wallet;
-  return {
-    id: address.id,
-    value: address.value,
-    type: toAddressTypeDto(address.type as PersistedAddressType),
-    verified: address.verified,
-    wallet: toWalletDto(wallet),
-  };
 }
 
 function toAddressTypeDto(type: PersistedAddressType): AddressTypeDto {

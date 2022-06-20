@@ -15,7 +15,6 @@ import {
   AddressResourceId,
   CreateAddressCommandDto,
   PatchAddressCommandDto,
-  toAddressDto,
 } from '../address/address.controller.dto';
 import { AuthenticationGuard } from '../auth/authentication.guard';
 import { PrismaService } from '../prisma/prisma.service';
@@ -39,7 +38,7 @@ export class WalletAddressesControllerV1 {
   @Get('/')
   async findAll(@AuthPrincipal() { wallet }: Principal): Promise<AddressDto[]> {
     const addresses = await this.addressService.findAll(wallet.id);
-    return addresses.map((it) => toAddressDto(it));
+    return addresses.map((it) => AddressDto.from(it));
   }
 
   @Get('/:addressId')
@@ -48,7 +47,7 @@ export class WalletAddressesControllerV1 {
     @Param() { addressId }: AddressResourceId,
   ): Promise<AddressDto> {
     const address = await this.addressService.findOne(addressId, wallet.id);
-    return toAddressDto(address);
+    return AddressDto.from(address);
   }
 
   @Post('/')
@@ -57,7 +56,7 @@ export class WalletAddressesControllerV1 {
     @Body() command: CreateAddressCommandDto,
   ): Promise<AddressDto> {
     const addressCreated = await this.addressService.create(command, wallet);
-    return toAddressDto(addressCreated);
+    return AddressDto.from(addressCreated);
   }
 
   @Patch('/:addressId')
@@ -67,7 +66,7 @@ export class WalletAddressesControllerV1 {
     @Body() command: PatchAddressCommandDto,
   ): Promise<AddressDto> {
     const address = await this.addressService.patch(addressId, command, wallet);
-    return toAddressDto(address);
+    return AddressDto.from(address);
   }
 
   @Delete('/:addressId')
@@ -89,7 +88,7 @@ export class WalletAddressesControllerV1 {
       command,
       wallet,
     );
-    return toAddressDto(address);
+    return AddressDto.from(address);
   }
 
   @Post('/:addressId/verification/resendCode')

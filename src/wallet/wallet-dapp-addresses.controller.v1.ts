@@ -18,7 +18,6 @@ import {
   DappAddressResourceId,
   FindDappAddressesQuery,
   PatchDappAddressCommand,
-  toDappAddressDto,
 } from '../dapp-address/dapp-address.controller.dto';
 import { AuthenticationGuard } from '../auth/authentication.guard';
 import { PrismaService } from '../prisma/prisma.service';
@@ -61,7 +60,7 @@ export class WalletDappAddressesControllerV1 {
         },
       },
     });
-    return dappAddressses.map((it) => toDappAddressDto(it));
+    return dappAddressses.map((it) => DappAddressDto.from(it));
   }
 
   @Get('/:dappAddressId')
@@ -86,7 +85,7 @@ export class WalletDappAddressesControllerV1 {
       },
       rejectOnNotFound: (e) => new NotFoundException(e.message),
     });
-    return toDappAddressDto(dappAddress);
+    return DappAddressDto.from(dappAddress);
   }
 
   @Post('/')
@@ -123,7 +122,7 @@ export class WalletDappAddressesControllerV1 {
     if ((dappAddress.address.type as PersistedAddressType) === 'telegram') {
       await this.tryFillTelegramMetadata(dappAddress);
     }
-    return toDappAddressDto(dappAddress);
+    return DappAddressDto.from(dappAddress);
   }
 
   private async tryFillTelegramMetadata(
@@ -200,7 +199,7 @@ export class WalletDappAddressesControllerV1 {
         },
       },
     });
-    return toDappAddressDto(dappAddress);
+    return DappAddressDto.from(dappAddress);
   }
 
   @Delete('/:dappAddressId')
