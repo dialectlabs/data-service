@@ -130,7 +130,6 @@ export class WalletControllerV0 {
         verified: address.verified,
         dapp: dapp.publicKey,
         enabled,
-        value: wallet ?? address.value,
       };
     });
   }
