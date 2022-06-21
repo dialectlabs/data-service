@@ -8,7 +8,7 @@ import { DappDto } from '../dapp/dapp.controller.v1.dto';
 export class DappAddressDto {
   readonly id!: string;
   readonly enabled!: boolean;
-  readonly telegramChatId?: string;
+  readonly channelId?: string;
   readonly dapp!: DappDto;
   readonly address!: AddressDto;
 
@@ -21,7 +21,7 @@ export class DappAddressDto {
     return {
       id: dappAddress.id,
       enabled: dappAddress.enabled,
-      telegramChatId: extractTelegramChatId(dappAddress),
+      channelId: extractTelegramChatId(dappAddress),
       address: AddressDto.from(dappAddress.address),
       dapp: DappDto.from(dappAddress.dapp),
     };
