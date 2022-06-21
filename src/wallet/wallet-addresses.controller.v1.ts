@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Param,
   Patch,
   Post,
@@ -92,6 +93,7 @@ export class WalletAddressesControllerV1 {
   }
 
   @Post('/:addressId/resendVerificationCode')
+  @HttpCode(204)
   async resendVerificationCode(
     @AuthPrincipal() { wallet }: Principal,
     @Param() { addressId }: AddressResourceId,

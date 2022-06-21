@@ -58,7 +58,7 @@ export class AddressService {
 
   async create({ type, value }: CreateAddressCommandDto, wallet: Wallet) {
     const verificationNeeded = addressRequiresVerification(type);
-    const addressValue = value.toLowerCase().trim();
+    const addressValue = value.trim();
     if (verificationNeeded) {
       return this.createWithVerification(addressValue, type, wallet);
     }
@@ -129,7 +129,7 @@ export class AddressService {
     wallet: Wallet,
   ) {
     const existingAddress = await this.findOne(addressId, wallet.id);
-    const newAddressValue = command.value && command.value.toLowerCase().trim();
+    const newAddressValue = command.value && command.value.trim();
     const addressValueChanged = Boolean(
       newAddressValue && newAddressValue !== existingAddress.value,
     );
@@ -220,7 +220,7 @@ export class AddressService {
         `Verification attempts limit reached, please resend verification code`,
       );
     }
-    const submittedVerificationCode = command.code.toLowerCase().trim();
+    const submittedVerificationCode = command.code.trim();
     if (submittedVerificationCode !== existingAddress.verificationCode) {
       await this.increaseVerificationAttempts(addressId, wallet);
       throw new UnprocessableEntityException(

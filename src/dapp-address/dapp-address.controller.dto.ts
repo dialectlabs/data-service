@@ -47,6 +47,7 @@ export class CreateDappAddressCommand {
   readonly dappPublicKey!: string;
   @IsUUID('4')
   readonly addressId!: string;
+  @IsBoolean()
   readonly enabled!: boolean;
 }
 
