@@ -7,12 +7,17 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { PrismaService } from './prisma/prisma.service';
+import { Logger } from 'nestjs-pino';
+import { PrismaExceptionInterceptor } from './middleware/prisma-error-interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['log', 'warn', 'error'],
   });
-
+  const logger = app.get(Logger);
+  app.useLogger(logger);
+  console.log = (it) => logger.log(it);
+  console.error = (it) => logger.error(it);
   // TODO: restrict with User-Agent, etc to be sure only our widget is targeting API
   app.enableCors({
     origin: '*',
@@ -22,6 +27,8 @@ async function bootstrap() {
   app.enableVersioning({
     type: VersioningType.URI,
   });
+  app.useGlobalInterceptors(new PrismaExceptionInterceptor());
+
   const prismaService = app.get(PrismaService);
   prismaService.enableShutdownHooks(app);
 

@@ -21,12 +21,13 @@ export class DappAddressDto extends AddressDto {
   readonly addressId!: string;
   readonly dapp!: string; // e.g. 'D1ALECTfeCZt9bAbPWtJk7ntv24vDYGPmyS7swp7DY5h'
   readonly enabled!: boolean;
+  readonly value?: string;
 }
 
 export class PutDappAddressDto {
   /*
     This payload is overloaded to support 2 use cases:
-  
+
     1. An address must be updated. Requires:
       - addressId
       - value
@@ -46,7 +47,7 @@ export class PutDappAddressDto {
 export class PostDappAddressDto extends PutDappAddressDto {
   /*
     This payload is overloaded to support 3 use cases:
-  
+
     1. An address must also be created. Requires:
       - type
       - value
