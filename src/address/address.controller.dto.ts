@@ -25,49 +25,45 @@ export class AddressDto {
 
 export enum AddressTypeDto {
   Email = 'EMAIL',
-  Sms = 'SMS',
+  PhoneNumber = 'PHONE_NUMBER',
   Telegram = 'TELEGRAM',
   Wallet = 'WALLET',
 }
 
-function toAddressTypeDto(type: PersistedAddressType): AddressTypeDto {
-  switch (type) {
-    case 'email': {
-      return AddressTypeDto.Email;
-    }
-    case 'sms': {
-      return AddressTypeDto.Sms;
-    }
-    case 'telegram': {
-      return AddressTypeDto.Telegram;
-    }
-    case 'wallet': {
-      return AddressTypeDto.Wallet;
-    }
-    default: {
-      throw new IllegalStateError(`Unknown address type ${type}`);
-    }
+const addressTypeDtoToPersistedAddressType: Record<
+  AddressTypeDto,
+  PersistedAddressType
+> = {
+  [AddressTypeDto.Email]: 'email',
+  [AddressTypeDto.PhoneNumber]: 'sms',
+  [AddressTypeDto.Telegram]: 'telegram',
+  [AddressTypeDto.Wallet]: 'wallet',
+};
+
+const persistedAddressTypeToAddressTypeDto: Record<
+  PersistedAddressType,
+  AddressTypeDto
+> = {
+  ['email']: AddressTypeDto.Email,
+  ['sms']: AddressTypeDto.PhoneNumber,
+  ['telegram']: AddressTypeDto.Telegram,
+  ['wallet']: AddressTypeDto.Wallet,
+};
+
+export function toAddressTypeDto(type: PersistedAddressType): AddressTypeDto {
+  const addressTypeDto = persistedAddressTypeToAddressTypeDto[type];
+  if (!addressTypeDto) {
+    throw new IllegalStateError(`Unknown address type ${type}`);
   }
+  return addressTypeDto;
 }
 
 export function fromAddressTypeDto(type: AddressTypeDto): PersistedAddressType {
-  switch (type) {
-    case AddressTypeDto.Email: {
-      return 'email';
-    }
-    case AddressTypeDto.Sms: {
-      return 'sms';
-    }
-    case AddressTypeDto.Telegram: {
-      return 'telegram';
-    }
-    case AddressTypeDto.Wallet: {
-      return 'wallet';
-    }
-    default: {
-      throw new IllegalStateError(`Unknown address type ${type}`);
-    }
+  const persistedAddressType = addressTypeDtoToPersistedAddressType[type];
+  if (!persistedAddressType) {
+    throw new IllegalStateError(`Unknown address type ${type}`);
   }
+  return persistedAddressType;
 }
 
 export class AddressResourceId {

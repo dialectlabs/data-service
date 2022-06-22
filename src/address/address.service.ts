@@ -8,7 +8,6 @@ import { MailVerificationService } from '../mail/mail.service';
 import { SmsVerificationService } from '../sms/sms.service';
 import { generateVerificationCode } from '../utils';
 import {
-  AddressTypeDto,
   CreateAddressCommandDto,
   fromAddressTypeDto,
   PatchAddressCommandDto,
@@ -57,24 +56,34 @@ export class AddressService {
   }
 
   async create({ type, value }: CreateAddressCommandDto, wallet: Wallet) {
-    const verificationNeeded = addressRequiresVerification(type);
+    const persistedAddressType = fromAddressTypeDto(type);
+    const verificationNeeded =
+      addressRequiresVerification(persistedAddressType);
     const addressValue = value.trim();
     if (verificationNeeded) {
-      return this.createWithVerification(addressValue, type, wallet);
+      return this.createWithVerification(
+        addressValue,
+        persistedAddressType,
+        wallet,
+      );
     }
-    return this.createWithoutVerification(addressValue, type, wallet);
+    return this.createWithoutVerification(
+      addressValue,
+      persistedAddressType,
+      wallet,
+    );
   }
 
   private async createWithVerification(
     addressValue: string,
-    type: AddressTypeDto,
+    type: PersistedAddressType,
     wallet: Wallet,
   ) {
     const verificationCode = generateVerificationCode();
     const addressCreated = await this.prisma.address.create({
       data: {
         value: addressValue,
-        type: fromAddressTypeDto(type),
+        type,
         walletId: wallet.id,
         verified: false,
         verificationCode,
@@ -94,13 +103,13 @@ export class AddressService {
 
   private createWithoutVerification(
     addressValue: string,
-    type: AddressTypeDto,
+    type: PersistedAddressType,
     wallet: Wallet,
   ) {
     return this.prisma.address.create({
       data: {
         value: addressValue,
-        type: fromAddressTypeDto(type),
+        type,
         walletId: wallet.id,
         verified: true,
       },
@@ -112,13 +121,13 @@ export class AddressService {
 
   private initiateAddressVerification(
     addressValue: string,
-    addressType: AddressTypeDto | PersistedAddressType,
+    addressType: PersistedAddressType,
     verificationCode: string,
   ) {
-    if (addressType === AddressTypeDto.Email || addressType === 'email') {
+    if (addressType === 'email') {
       this.mailService.sendVerificationCode(addressValue, verificationCode);
     }
-    if (addressType === AddressTypeDto.Sms || addressType === 'sms') {
+    if (addressType === 'sms') {
       this.smsService.sendVerificationCode(addressValue, verificationCode);
     }
   }
@@ -129,7 +138,7 @@ export class AddressService {
     wallet: Wallet,
   ) {
     const existingAddress = await this.findOne(addressId, wallet.id);
-    const newAddressValue = command.value && command.value.trim();
+    const newAddressValue = command.value?.trim();
     const addressValueChanged = Boolean(
       newAddressValue && newAddressValue !== existingAddress.value,
     );
@@ -302,8 +311,6 @@ export class AddressService {
   }
 }
 
-function addressRequiresVerification(
-  addressType: AddressTypeDto | PersistedAddressType,
-) {
-  return !(addressType === AddressTypeDto.Wallet || addressType === 'wallet');
+function addressRequiresVerification(addressType: PersistedAddressType) {
+  return addressType !== 'wallet';
 }
