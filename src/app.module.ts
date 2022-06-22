@@ -19,7 +19,7 @@ import { LoggerModule } from 'nestjs-pino';
             if (msg.statusCode && msg.statusCode >= 400) {
               return false;
             }
-            return process.env.ENVIRONMENT === 'production';
+            return process.env.ENVIRONMENT !== 'local-development';
           },
         },
         transport: {
