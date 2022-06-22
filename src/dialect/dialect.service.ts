@@ -70,7 +70,7 @@ export class DialectService {
   async find(
     publicKey: string,
     wallet: Wallet,
-  ): Promise<MemberedAndMessagedDialect | null> {
+  ): Promise<MemberedAndMessagedDialect> {
     return this.prisma.dialect.findFirst({
       where: {
         publicKey,
@@ -90,6 +90,7 @@ export class DialectService {
           take: 50,
         },
       },
+      rejectOnNotFound: (e) => new NotFoundException(e),
     });
   }
 
@@ -131,10 +132,6 @@ export class DialectService {
 
   async delete(publicKey: string, wallet: Wallet) {
     const dialect = await this.find(publicKey, wallet);
-    if (!dialect)
-      throw new NotFoundException(
-        `No Dialect ${publicKey} found for Wallet ${wallet.publicKey}, cannot delete.`,
-      );
     if (
       !dialect.members.find(
         (m: WalletedMember) =>
@@ -159,10 +156,10 @@ export class DialectService {
   ): Promise<MemberedAndMessagedDialect> {
     // TODO: Reduce includes in this query since less is needed.
     const text = command.text;
-    const dialect = await this.findOrThrow(dialectPublicKey, wallet);
+    const dialect = await this.find(dialectPublicKey, wallet);
     const canWrite = this.checkWalletCanWriteTo(wallet, dialect);
     await this.postMessage(canWrite, dialect.id, text);
-    return this.findOrThrow(dialectPublicKey, wallet);
+    return this.find(dialectPublicKey, wallet);
   }
 
   private checkWalletCanWriteTo(
@@ -179,15 +176,6 @@ export class DialectService {
         `Wallet ${wallet.publicKey} does not have write privileges to Dialect ${dialect.publicKey}.`,
       );
     return canWrite;
-  }
-
-  private async findOrThrow(dialectPublicKey: string, wallet: Wallet) {
-    const dialect = await this.find(dialectPublicKey, wallet);
-    if (!dialect)
-      throw new NotFoundException(
-        `No Dialect with public key ${dialectPublicKey} found for wallet ${wallet.publicKey}, cannot post new message.`,
-      );
-    return dialect;
   }
 
   async postMessage(

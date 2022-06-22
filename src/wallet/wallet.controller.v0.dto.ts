@@ -79,6 +79,7 @@ export class VerifyAddressDto {
   readonly code!: string;
   readonly addressId!: string;
 }
+
 export class VerifySmsDto {
   readonly code!: string;
   readonly addressId!: string;

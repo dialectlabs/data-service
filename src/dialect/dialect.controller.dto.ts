@@ -19,7 +19,10 @@ import { IsPublicKey } from '../middleware/public-key-validation';
 //
 // DTO types
 //
-
+export class DialectResourceId {
+  @IsPublicKey()
+  readonly dialectPublicKey!: string;
+}
 export class DialectAccountDto {
   readonly publicKey!: string;
   readonly dialect!: DialectDto;

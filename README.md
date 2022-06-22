@@ -73,6 +73,10 @@ To fill in.
 
 #### Install dependencies
 
+```shell
+npm install -g dotenv-cli 
+```
+
 **npm:**
 
 ```shell
