@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
 import { WalletControllerV0 } from './wallet.controller.v0';
-import { DappModule } from '../dapp/dapp.module';
 import { MailModule } from '../mail/mail.module';
 import { SmsModule } from '../sms/sms.module';
 import { WalletService } from './wallet.service';
@@ -15,7 +14,6 @@ import { DappAddressModule } from '../dapp-address/dapp-address.module';
     PrismaModule,
     AddressModule,
     DappAddressModule,
-    DappModule,
     MailModule,
     SmsModule,
   ],

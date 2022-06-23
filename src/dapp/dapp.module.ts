@@ -10,6 +10,7 @@ import { MailModule } from '../mail/mail.module';
 import { SmsModule } from '../sms/sms.module';
 import { TelegramModule } from '../telegram/telegram.module';
 import { DappAddressModule } from '../dapp-address/dapp-address.module';
+import { DialectModule } from '../dialect/dialect.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { DappAddressModule } from '../dapp-address/dapp-address.module';
     SmsModule,
     TelegramModule,
     DappAddressModule,
+    DialectModule,
   ],
   providers: [DappService, DappNotificationsService, DappControllerV1],
   exports: [DappService],

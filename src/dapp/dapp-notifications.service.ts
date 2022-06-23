@@ -7,6 +7,7 @@ import { TelegramService } from '../telegram/telegram.service';
 import { MailService } from '../mail/mail.service';
 import { SmsService } from '../sms/sms.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { DialectService } from '../dialect/dialect.service';
 
 @Injectable()
 export class DappNotificationsService {
@@ -15,14 +16,14 @@ export class DappNotificationsService {
     private readonly telegram: TelegramService,
     private readonly mail: MailService,
     private readonly sms: SmsService,
+    private readonly dialect: DialectService,
     private readonly prisma: PrismaService,
   ) {}
 
   async send(dappPublicKey: string, command: SendNotificationCommand) {
-    const dapp = await this.dappService.lookupDapp(dappPublicKey);
+    const dapp = await this.dappService.findOne(dappPublicKey);
     const title = command.title;
     const message = command.message;
-
     let addressQuery;
     if (title) {
       // omit all wallets since this is handled client side for now

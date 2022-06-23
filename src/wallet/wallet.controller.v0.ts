@@ -7,6 +7,7 @@ import {
   Get,
   HttpException,
   HttpStatus,
+  NotFoundException,
   Param,
   Post,
   Put,
@@ -20,7 +21,6 @@ import {
   PutDappAddressDto,
   VerifyAddressDto,
 } from './wallet.controller.v0.dto';
-import { DappService } from '../dapp/dapp.service';
 import { AuthenticationGuard } from '../auth/authentication.guard';
 import { MailService } from '../mail/mail.service';
 import { generateVerificationCode } from 'src/utils';
@@ -35,7 +35,6 @@ import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 export class WalletControllerV0 {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly dappService: DappService,
     private readonly mailService: MailService,
     private readonly smsService: SmsService,
   ) {}
@@ -100,7 +99,7 @@ export class WalletControllerV0 {
     @Param('public_key', PublicKeyValidationPipe) publicKey: string,
     @Param('dapp', PublicKeyValidationPipe) dappPublicKey: string,
   ): Promise<DappAddressDto[]> {
-    const dapp = await this.dappService.lookupDapp(dappPublicKey);
+    const dapp = await this.findDapp(dappPublicKey);
     // Query for all addresses for a wallet
     const addresses = await this.prisma.address.findMany({
       where: {
@@ -157,7 +156,7 @@ export class WalletControllerV0 {
     @Param('dapp', PublicKeyValidationPipe) dappPublicKey: string,
     @Body() postDappAddressDto: PostDappAddressDto,
   ): Promise<DappAddressDto> {
-    const dapp = await this.dappService.lookupDapp(dappPublicKey);
+    const dapp = await this.findDapp(dappPublicKey);
 
     const addressId = postDappAddressDto.addressId;
     const type = postDappAddressDto.type;
@@ -353,8 +352,7 @@ export class WalletControllerV0 {
     @Param('dapp', PublicKeyValidationPipe) dappPublicKey: string,
     @Body() putDappAddressDto: PutDappAddressDto,
   ): Promise<DappAddressDto> {
-    await this.dappService.lookupDapp(dappPublicKey);
-
+    await this.findDapp(dappPublicKey);
     const addressId = putDappAddressDto.addressId;
     const value = putDappAddressDto.value;
     const enabled = putDappAddressDto.enabled;
@@ -480,7 +478,7 @@ export class WalletControllerV0 {
     @Param('dapp', PublicKeyValidationPipe) dappPublicKey: string,
     @Body() verifyAddressDto: VerifyAddressDto,
   ): Promise<any> {
-    const dapp = await this.dappService.lookupDapp(dappPublicKey);
+    const dapp = await this.findDapp(dappPublicKey);
 
     const address = await this.prisma.address.findUnique({
       where: { id: verifyAddressDto.addressId },
@@ -584,5 +582,14 @@ export class WalletControllerV0 {
     } else if (address.type == 'sms') {
       this.smsService.sendVerificationCode(address.value, code);
     }
+  }
+
+  private async findDapp(dappPublicKey: string) {
+    return this.prisma.dapp.findUnique({
+      where: {
+        publicKey: dappPublicKey,
+      },
+      rejectOnNotFound: (e) => new NotFoundException(e.message),
+    });
   }
 }
