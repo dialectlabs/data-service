@@ -21,6 +21,12 @@ const verificationCodeResendDelay = Duration.fromObject({
   seconds: 60,
 });
 
+export interface FindAddressQuery {
+  ids?: string[];
+  verified?: boolean;
+  walletId?: string;
+}
+
 @Injectable()
 export class AddressService {
   constructor(

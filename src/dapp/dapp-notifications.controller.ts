@@ -5,7 +5,7 @@ import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 import { DappResourceId } from './dapp.controller.v1.dto';
 import { SendNotificationCommand } from './dapp-notifications.controller.dto';
 import { DappNotificationsService } from './dapp-notifications.service';
-import { DappControllerV1 } from './dapp.controller.v1';
+import { checkPrincipalAuthorizedToUseDapp } from './dapp.service';
 
 @ApiTags('Dapps')
 @Controller({
@@ -27,7 +27,7 @@ export class DappNotificationsController {
     @Param() { dappPublicKey }: DappResourceId,
     @Body() command: SendNotificationCommand,
   ) {
-    DappControllerV1.checkOperationAllowed(dappPublicKey, principal);
+    checkPrincipalAuthorizedToUseDapp(principal, dappPublicKey);
     await this.dappNotificationsService.send(dappPublicKey, command);
   }
 }

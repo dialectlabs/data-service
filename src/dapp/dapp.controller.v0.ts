@@ -2,12 +2,14 @@ import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SubscriberDto } from './dapp.controller.v0.dto';
 import _ from 'lodash';
-import { DappService } from './dapp.service';
 import { PublicKeyValidationPipe } from '../middleware/public-key-validation';
 import { AuthenticationGuard } from '../auth/authentication.guard';
 import { DappControllerV1 } from './dapp.controller.v1';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
-import { extractTelegramChatId } from '../dapp-address/dapp-address.service';
+import {
+  DappAddressService,
+  extractTelegramChatId,
+} from '../dapp-address/dapp-address.service';
 
 @ApiTags('Dapps')
 @Controller({
@@ -17,7 +19,7 @@ import { extractTelegramChatId } from '../dapp-address/dapp-address.service';
 @ApiBearerAuth()
 export class DappControllerV0 {
   constructor(
-    private readonly dappService: DappService,
+    private readonly dappAddressService: DappAddressService,
     private readonly dappControllerV1: DappControllerV1,
   ) {}
 
@@ -36,9 +38,15 @@ export class DappControllerV0 {
     @Param('public_key', PublicKeyValidationPipe) dappPublicKey: string,
   ): Promise<SubscriberDto[]> {
     await this.dappControllerV1.findOne(principal, { dappPublicKey });
-    const dappAddresses = await this.dappService.findDappAdresses(
-      dappPublicKey,
-    );
+    const dappAddresses = await this.dappAddressService.findAll({
+      enabled: true,
+      address: {
+        verified: true,
+      },
+      dapp: {
+        publicKey: dappPublicKey,
+      },
+    });
     return _(dappAddresses)
       .map((it) => ({
         resourceId: it.address.wallet.publicKey,

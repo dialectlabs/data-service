@@ -9,9 +9,16 @@ import { DappNotificationsController } from './dapp-notifications.controller';
 import { MailModule } from '../mail/mail.module';
 import { SmsModule } from '../sms/sms.module';
 import { TelegramModule } from '../telegram/telegram.module';
+import { DappAddressModule } from '../dapp-address/dapp-address.module';
 
 @Module({
-  imports: [PrismaModule, MailModule, SmsModule, TelegramModule],
+  imports: [
+    PrismaModule,
+    MailModule,
+    SmsModule,
+    TelegramModule,
+    DappAddressModule,
+  ],
   providers: [DappService, DappNotificationsService, DappControllerV1],
   exports: [DappService],
   controllers: [

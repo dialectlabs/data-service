@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
-import { DappService } from '../dapp/dapp.service';
+import { DappAddressService } from './dapp-address.service';
 
 @Module({
   imports: [PrismaModule],
-  providers: [DappService],
-  exports: [DappService],
+  providers: [DappAddressService],
+  exports: [DappAddressService],
 })
 export class DappAddressModule {}

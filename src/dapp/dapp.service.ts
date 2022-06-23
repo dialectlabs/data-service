@@ -1,7 +1,17 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { PublicKey } from '@solana/web3.js';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
 import { Dapp } from '@prisma/client';
+import { Principal } from '../auth/authenticaiton.decorator';
+
+export interface FindDappQuery {
+  publicKey?: string;
+}
 
 @Injectable()
 export class DappService {
@@ -29,33 +39,22 @@ export class DappService {
     return dapp_;
   }
 
-  async findDappAdresses(dappPublicKey: string) {
-    return this.prisma.dappAddress.findMany({
-      where: {
-        enabled: true,
-        address: {
-          verified: true,
-        },
-        dapp: {
-          publicKey: dappPublicKey,
-        },
-      },
-      include: {
-        dapp: true,
-        address: {
-          include: {
-            wallet: true,
-          },
-        },
-      },
-    });
-  }
-
   async create(publicKey: string) {
     return this.prisma.dapp.create({
       data: {
         publicKey,
       },
     });
+  }
+}
+
+export function checkPrincipalAuthorizedToUseDapp(
+  principal: Principal,
+  dappPublicKey: string,
+) {
+  if (dappPublicKey !== principal.wallet.publicKey) {
+    throw new ForbiddenException(
+      `Wallet ${principal.wallet.publicKey} not authorized to perform operations for dapp ${dappPublicKey}.`,
+    );
   }
 }

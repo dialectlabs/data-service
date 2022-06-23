@@ -33,7 +33,7 @@ export class DappAddressResourceId {
   readonly dappAddressId!: string;
 }
 
-export class FindDappAddressesQuery {
+export class FindDappAddressesQueryDto {
   @IsOptional()
   @IsPublicKey()
   readonly dappPublicKey?: string;
@@ -42,7 +42,7 @@ export class FindDappAddressesQuery {
   readonly addressIds?: string[];
 }
 
-export class CreateDappAddressCommand {
+export class CreateDappAddressCommandDto {
   @IsPublicKey()
   readonly dappPublicKey!: string;
   @IsUUID('4')
@@ -51,7 +51,7 @@ export class CreateDappAddressCommand {
   readonly enabled!: boolean;
 }
 
-export class PatchDappAddressCommand {
+export class PatchDappAddressCommandDto {
   @IsOptional()
   @IsBoolean()
   readonly enabled?: boolean;

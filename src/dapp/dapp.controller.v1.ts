@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  ForbiddenException,
   Get,
   NotFoundException,
   Param,
@@ -18,7 +17,8 @@ import {
   DappResourceId,
 } from './dapp.controller.v1.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { DappService } from './dapp.service';
+import { checkPrincipalAuthorizedToUseDapp } from './dapp.service';
+import { DappAddressService } from '../dapp-address/dapp-address.service';
 
 @ApiTags('Dapps')
 @Controller({
@@ -29,7 +29,7 @@ import { DappService } from './dapp.service';
 @ApiBearerAuth()
 export class DappControllerV1 {
   constructor(
-    private readonly dappService: DappService,
+    private readonly dappAddressService: DappAddressService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -38,7 +38,7 @@ export class DappControllerV1 {
     @AuthPrincipal() principal: Principal,
     @Body() command: CreateDappCommand,
   ): Promise<DappDto> {
-    DappControllerV1.checkOperationAllowed(command.publicKey, principal);
+    checkPrincipalAuthorizedToUseDapp(principal, command.publicKey);
     const dapp = await this.prisma.dapp.create({
       data: {
         publicKey: command.publicKey,
@@ -47,12 +47,12 @@ export class DappControllerV1 {
     return DappDto.from(dapp);
   }
 
-  @Get('/:dappPublicKey')
+  @Get(':dappPublicKey')
   async findOne(
     @AuthPrincipal() principal: Principal,
     @Param() { dappPublicKey }: DappResourceId,
   ): Promise<DappDto> {
-    DappControllerV1.checkOperationAllowed(dappPublicKey, principal);
+    checkPrincipalAuthorizedToUseDapp(principal, dappPublicKey);
     const dapp = await this.prisma.dapp.findUnique({
       where: {
         publicKey: dappPublicKey,
@@ -67,18 +67,12 @@ export class DappControllerV1 {
     @AuthPrincipal() principal: Principal,
     @Param() { dappPublicKey }: DappResourceId,
   ): Promise<DappAddressDto[]> {
-    DappControllerV1.checkOperationAllowed(dappPublicKey, principal);
-    const dappAddresses = await this.dappService.findDappAdresses(
-      dappPublicKey,
-    );
+    checkPrincipalAuthorizedToUseDapp(principal, dappPublicKey);
+    const dappAddresses = await this.dappAddressService.findAll({
+      dapp: {
+        publicKey: dappPublicKey,
+      },
+    });
     return dappAddresses.map((it) => DappAddressDto.from(it));
-  }
-
-  static checkOperationAllowed(dappPublicKey: string, principal: Principal) {
-    if (dappPublicKey !== principal.wallet.publicKey) {
-      throw new ForbiddenException(
-        `Wallet ${principal.wallet.publicKey} not authorized to perform operations for dapp ${dappPublicKey}.`,
-      );
-    }
   }
 }

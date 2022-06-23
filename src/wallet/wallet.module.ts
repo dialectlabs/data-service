@@ -8,9 +8,17 @@ import { WalletService } from './wallet.service';
 import { WalletAddressesControllerV1 } from './wallet-addresses.controller.v1';
 import { WalletDappAddressesControllerV1 } from './wallet-dapp-addresses.controller.v1';
 import { AddressModule } from '../address/address.module';
+import { DappAddressModule } from '../dapp-address/dapp-address.module';
 
 @Module({
-  imports: [PrismaModule, AddressModule, DappModule, MailModule, SmsModule],
+  imports: [
+    PrismaModule,
+    AddressModule,
+    DappAddressModule,
+    DappModule,
+    MailModule,
+    SmsModule,
+  ],
   exports: [WalletService],
   providers: [WalletService],
   controllers: [
