@@ -74,10 +74,7 @@ export class DappControllerV1 {
     return dappAddresses.map((it) => DappAddressDto.from(it));
   }
 
-  private static checkOperationAllowed(
-    dappPublicKey: string,
-    principal: Principal,
-  ) {
+  static checkOperationAllowed(dappPublicKey: string, principal: Principal) {
     if (dappPublicKey !== principal.wallet.publicKey) {
       throw new ForbiddenException(
         `Wallet ${principal.wallet.publicKey} not authorized to perform operations for dapp ${dappPublicKey}.`,

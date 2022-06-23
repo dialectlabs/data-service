@@ -4,8 +4,8 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { MailVerificationService } from '../mail/mail.service';
-import { SmsVerificationService } from '../sms/sms.service';
+import { MailService } from '../mail/mail.service';
+import { SmsService } from '../sms/sms.service';
 import { generateVerificationCode } from '../utils';
 import {
   CreateAddressCommandDto,
@@ -25,8 +25,8 @@ const verificationCodeResendDelay = Duration.fromObject({
 export class AddressService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly mailService: MailVerificationService,
-    private readonly smsService: SmsVerificationService,
+    private readonly mailService: MailService,
+    private readonly smsService: SmsService,
   ) {}
 
   findAll(walletId: string) {
