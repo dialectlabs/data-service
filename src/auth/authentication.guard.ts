@@ -25,6 +25,9 @@ function base64ToUint8(string: string): Uint8Array {
 
 const bearerHeader = 'Bearer ';
 
+const basicHeader = 'Basic ';
+const THE_ONLY_BASIC_AUTH_USER = process.env.BASIC_AUTH_USER;
+
 @Injectable()
 export class AuthenticationGuard implements CanActivate {
   private readonly logger = new Logger(AuthenticationGuard.name);
@@ -33,15 +36,18 @@ export class AuthenticationGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request & Principal>();
-    const authToken = AuthenticationGuard.getAuthToken(request);
-    // TODO: remove token v1 support after migration to SDK
-    if (AuthenticationGuard.isTokenV1(authToken)) {
-      const wallet = await this.validateTokenV1(request, authToken);
-      request.wallet = wallet;
+    // TODO: remove after all monitoring services are migrated to SDK
+    if (AuthenticationGuard.isBasicAuth(request)) {
+      request.wallet = await this.validateBasicAuth(request);
       return true;
     }
-    const wallet = await this.validateTokenV2(authToken);
-    request.wallet = wallet;
+    const authToken = AuthenticationGuard.getBearerAuthToken(request);
+    // TODO: remove token v1 support after migration to SDK
+    if (AuthenticationGuard.isTokenV1(authToken)) {
+      request.wallet = await this.validateTokenV1(request, authToken);
+      return true;
+    }
+    request.wallet = await this.validateTokenV2(authToken);
     return true;
   }
 
@@ -77,7 +83,7 @@ export class AuthenticationGuard implements CanActivate {
     }
   }
 
-  private static getAuthToken(request: Request) {
+  private static getBearerAuthToken(request: Request) {
     const authHeader = request.headers.authorization;
     if (!authHeader) {
       throw new UnauthorizedException('No Authorization header');
@@ -155,5 +161,37 @@ export class AuthenticationGuard implements CanActivate {
       },
       update: {},
     });
+  }
+
+  private static isBasicAuth(request: Request) {
+    const authHeader = request.headers.authorization;
+    if (!authHeader) {
+      throw new UnauthorizedException('No Authorization header');
+    }
+    return authHeader.startsWith(basicHeader);
+  }
+
+  private async validateBasicAuth(request: Request) {
+    const authHeader = request.headers.authorization;
+    if (!authHeader) {
+      throw new UnauthorizedException('No Authorization header');
+    }
+    const headerElements = authHeader.split(' ');
+    if (headerElements.length !== 2) {
+      throw new UnauthorizedException('Invalid authorization header');
+    }
+    const b64auth = headerElements[1];
+    const [username] = Buffer.from(b64auth, 'base64').toString().split(':');
+    if (!username || !THE_ONLY_BASIC_AUTH_USER) {
+      throw new UnauthorizedException();
+    }
+    if (username !== THE_ONLY_BASIC_AUTH_USER) {
+      throw new UnauthorizedException();
+    }
+    const publicKey = requireValidPublicKey(
+      request.params.public_key,
+      'public_key',
+    );
+    return this.upsertWallet(publicKey);
   }
 }
