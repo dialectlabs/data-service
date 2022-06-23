@@ -1,4 +1,11 @@
+import { Injectable } from '@nestjs/common';
 import { DappAddress, Prisma } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+
+@Injectable()
+export class DappAddressService {
+  constructor(private readonly prisma: PrismaService) {}
+}
 
 export function extractTelegramChatId(
   dappAddress: DappAddress,

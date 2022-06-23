@@ -1,5 +1,3 @@
-// TODO: Enforce UUID format in some kind of middleware exception handling.
-// Consolidate exception handling into single wrapper
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SubscriberDto } from './dapp.controller.v0.dto';
@@ -7,9 +5,9 @@ import _ from 'lodash';
 import { DappService } from './dapp.service';
 import { PublicKeyValidationPipe } from '../middleware/public-key-validation';
 import { AuthenticationGuard } from '../auth/authentication.guard';
-import { extractTelegramChatId } from '../dapp-address/dapp-address.service';
 import { DappControllerV1 } from './dapp.controller.v1';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
+import { extractTelegramChatId } from '../dapp-address/dapp-address.service';
 
 @ApiTags('Dapps')
 @Controller({

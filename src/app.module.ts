@@ -8,6 +8,7 @@ import { TelegramModule } from './telegram/telegram.module';
 import { ConfigModule } from '@nestjs/config';
 import { DialectModule } from './dialect/dialect.module';
 import { LoggerModule } from 'nestjs-pino';
+import { DappAddressModule } from './dapp-address/dapp-address.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { LoggerModule } from 'nestjs-pino';
     PrismaModule,
     WalletModule,
     DappModule,
+    DappAddressModule,
     MailModule,
     SmsModule,
     TelegramModule,
