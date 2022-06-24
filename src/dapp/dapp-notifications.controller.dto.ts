@@ -1,4 +1,4 @@
-import { IsArray, IsString, ValidateNested } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsString } from 'class-validator';
 import { IsPublicKey } from '../middleware/public-key-validation';
 
 export class UnicastNotificationCommandDto {
@@ -16,8 +16,8 @@ export class MulticastNotificationCommandDto {
   @IsString()
   message!: string;
   @IsArray()
-  @ValidateNested({ each: true })
-  @IsPublicKey()
+  @ArrayNotEmpty()
+  @IsPublicKey({ each: true })
   receiverPublicKeys!: string[];
 }
 
