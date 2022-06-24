@@ -28,6 +28,7 @@ export interface FindDialectQuery {
   publicKey?: string;
   someMemberWalletId?: string;
   memberWalletPublicKeys?: string[];
+  encrypted?: boolean;
 }
 
 @Injectable()
@@ -37,14 +38,28 @@ export class DialectService {
     private readonly walletService: WalletService,
   ) {}
 
-  async findOne(query: FindDialectQuery): Promise<MemberedAndMessagedDialect> {
+  async findOneFailFast(
+    query: FindDialectQuery,
+  ): Promise<MemberedAndMessagedDialect> {
+    const dialect = await this.findOneFailSafe(query);
+    if (!dialect) {
+      throw new UnprocessableEntityException(
+        `Cannot find dialect using given query: ${JSON.stringify(query)}`,
+      );
+    }
+    return dialect;
+  }
+
+  async findOneFailSafe(
+    query: FindDialectQuery,
+  ): Promise<MemberedAndMessagedDialect | null> {
     const dialects = await this.findAll(query);
     if (dialects.length > 1) {
       throw new UnprocessableEntityException(
         `Expected single dialect for given parameters.`,
       );
     }
-    return dialects[0];
+    return dialects[0] ?? null;
   }
 
   async findAll(
@@ -53,6 +68,7 @@ export class DialectService {
     return this.prisma.dialect.findMany({
       where: {
         ...(query.publicKey && { publicKey: query.publicKey }),
+        ...(query.encrypted && { encrypted: query.encrypted }),
         ...(query.someMemberWalletId && {
           members: {
             some: {
@@ -122,7 +138,7 @@ export class DialectService {
   }
 
   async delete(publicKey: string, wallet: Wallet) {
-    const dialect = await this.findOne({
+    const dialect = await this.findOneFailFast({
       publicKey,
       someMemberWalletId: wallet.id,
     });
@@ -144,16 +160,14 @@ export class DialectService {
   }
 
   async sendMessage(
-    command: SendMessageCommandDto,
+    text: Buffer,
     findDialectQuery: FindDialectQuery,
     principal: Principal,
   ): Promise<MemberedAndMessagedDialect> {
-    // TODO: Reduce includes in this query since less is needed.
-    const text = command.text;
-    const dialect = await this.findOne(findDialectQuery);
+    const dialect = await this.findOneFailFast(findDialectQuery);
     const canWrite = this.checkWalletCanWriteTo(principal.wallet, dialect);
-    await this.postMessage(canWrite, dialect.id, text);
-    return this.findOne(findDialectQuery);
+    await this.saveMessage(canWrite, dialect.id, text);
+    return this.findOneFailFast(findDialectQuery);
   }
 
   private checkWalletCanWriteTo(
@@ -172,10 +186,10 @@ export class DialectService {
     return canWrite;
   }
 
-  async postMessage(
+  async saveMessage(
     member: Member,
     dialectId: string,
-    text: number[],
+    text: Buffer,
   ): Promise<Message> {
     const timestamp = new Date();
     const [message] = await this.prisma.$transaction([
@@ -183,7 +197,7 @@ export class DialectService {
         data: {
           dialectId,
           memberId: member.id,
-          text: Buffer.from(text),
+          text,
           timestamp,
         },
       }),

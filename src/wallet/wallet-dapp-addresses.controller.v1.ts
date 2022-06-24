@@ -119,6 +119,10 @@ export class WalletDappAddressesControllerV1 {
     return DappAddressDto.from(dappAddress);
   }
 
+  /*
+  TODO: This code assumes there is only one telegram bot,
+   hence only one telegram_chat_id, created at the original /start event from telegram.service.ts.
+  */
   private async tryFillTelegramMetadata(
     dappAddress: DappAddress & {
       dapp: Dapp;

@@ -68,7 +68,7 @@ export class DialectController {
     @AuthPrincipal() { wallet }: Principal,
     @Param() { dialectPublicKey }: DialectResourceId,
   ) {
-    const dialect = await this.dialectService.findOne({
+    const dialect = await this.dialectService.findOneFailSafe({
       publicKey: dialectPublicKey,
       someMemberWalletId: wallet.id,
     });
@@ -95,7 +95,7 @@ export class DialectController {
     @Body() command: SendMessageCommandDto,
   ) {
     const dialect = await this.dialectService.sendMessage(
-      command,
+      Buffer.from(command.text),
       { publicKey: dialectPublicKey, someMemberWalletId: principal.wallet.id },
       principal,
     );

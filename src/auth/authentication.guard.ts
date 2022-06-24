@@ -52,12 +52,20 @@ export class AuthenticationGuard implements CanActivate {
   }
 
   private validateTokenV1(request: Request, authToken: string) {
-    const singerPublicKey = requireValidPublicKey(
-      request.params.public_key,
-      'public_key',
-    );
+    const singerPublicKey =
+      AuthenticationGuard.requireValidPublicKeyPathParamInRequest(request);
     AuthenticationGuard.checkTokenValid(authToken, singerPublicKey);
     return this.upsertWallet(singerPublicKey);
+  }
+
+  private static requireValidPublicKeyPathParamInRequest(request: Request) {
+    const publicKeyPathParam = request.params.public_key;
+    if (!publicKeyPathParam) {
+      throw new UnauthorizedException(
+        "Resource public key must be passed as 'public_key' path parameter.",
+      );
+    }
+    return requireValidPublicKey(publicKeyPathParam, 'public_key');
   }
 
   private validateTokenV2(authToken: string) {
@@ -144,8 +152,12 @@ export class AuthenticationGuard implements CanActivate {
   }
 
   private static extractExpirationTime(authToken: string) {
+    const expTime = authToken.split('.')[0];
+    if (!expTime) {
+      throw new UnauthorizedException('Expiration time not found in token');
+    }
     try {
-      return parseInt(authToken.split('.')[0], 10);
+      return parseInt(expTime, 10);
     } catch (e: any) {
       throw new UnauthorizedException('Signature verification failed');
     }
@@ -181,6 +193,9 @@ export class AuthenticationGuard implements CanActivate {
       throw new UnauthorizedException('Invalid authorization header');
     }
     const b64auth = headerElements[1];
+    if (!b64auth) {
+      throw new UnauthorizedException('Invalid authorization header');
+    }
     const [username] = Buffer.from(b64auth, 'base64').toString().split(':');
     if (!username || !THE_ONLY_BASIC_AUTH_USER) {
       throw new UnauthorizedException();
@@ -188,10 +203,8 @@ export class AuthenticationGuard implements CanActivate {
     if (username !== THE_ONLY_BASIC_AUTH_USER) {
       throw new UnauthorizedException();
     }
-    const publicKey = requireValidPublicKey(
-      request.params.public_key,
-      'public_key',
-    );
+    const publicKey =
+      AuthenticationGuard.requireValidPublicKeyPathParamInRequest(request);
     return this.upsertWallet(publicKey);
   }
 }

@@ -27,6 +27,7 @@ import { generateVerificationCode } from 'src/utils';
 import { SmsService } from 'src/sms/sms.service';
 import { PublicKeyValidationPipe } from '../middleware/public-key-validation';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
+import { IllegalStateError } from '@dialectlabs/sdk';
 
 @ApiTags('Wallets')
 @Controller({
@@ -267,7 +268,6 @@ export class WalletControllerV0 {
 
     let dappAddress;
     try {
-      console.log(`${address.id}`);
       /*
       TODO: !!! This code assumes there is only one telegram bot, hence only one telegram_chat_id, created at the original /start event from telegram.service.ts.
 
@@ -275,7 +275,7 @@ export class WalletControllerV0 {
       */
       const otherDappAddress = await this.prisma.dappAddress.findFirst({
         where: {
-          addressId: address.id,
+          addressId: address!.id,
           NOT: {
             // We assume if it's not undefined then it has a telegram_chat_id
             metadata: undefined,
@@ -291,6 +291,9 @@ export class WalletControllerV0 {
             telegram_chat_id: otherDappAddress?.metadata?.telegram_chat_id,
           }
         : undefined;
+      if (!address) {
+        throw new IllegalStateError('Address is not defined');
+      }
       dappAddress = await this.prisma.dappAddress.create({
         data: {
           enabled,
