@@ -114,7 +114,7 @@ export class SendMessageCommandDto {
   readonly text!: number[];
 }
 
-export class FindDialectQuery {
+export class FindDialectQueryDto {
   @IsPublicKey()
   @IsOptional()
   readonly memberPublicKey?: string;

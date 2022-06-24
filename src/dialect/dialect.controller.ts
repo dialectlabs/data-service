@@ -17,7 +17,7 @@ import {
   CreateDialectCommandDto,
   DialectAccountDto,
   DialectResourceId,
-  FindDialectQuery,
+  FindDialectQueryDto,
   SendMessageCommandDto,
 } from './dialect.controller.dto';
 import { AuthenticationGuard } from '../auth/authentication.guard';
@@ -40,9 +40,17 @@ export class DialectController {
   @Get('/')
   async findAll(
     @AuthPrincipal() { wallet }: Principal,
-    @Query() query: FindDialectQuery,
+    @Query() query: FindDialectQueryDto,
   ) {
-    const dialects = await this.dialectService.findAll(wallet, query);
+    const dialects = await this.dialectService.findAll(
+      query.memberPublicKey
+        ? {
+            memberWalletPublicKeys: [wallet.publicKey, query.memberPublicKey],
+          }
+        : {
+            someMemberWalletId: wallet.id,
+          },
+    );
     return dialects.map(DialectAccountDto.fromDialect);
   }
 
@@ -60,7 +68,10 @@ export class DialectController {
     @AuthPrincipal() { wallet }: Principal,
     @Param() { dialectPublicKey }: DialectResourceId,
   ) {
-    const dialect = await this.dialectService.find(dialectPublicKey, wallet);
+    const dialect = await this.dialectService.findOne({
+      publicKey: dialectPublicKey,
+      someMemberWalletId: wallet.id,
+    });
     if (!dialect)
       throw new NotFoundException(
         `No Dialect with public key ${dialectPublicKey} found for wallet ${wallet.publicKey}.`,
@@ -79,14 +90,14 @@ export class DialectController {
 
   @Post('/:dialectPublicKey/messages')
   async sendMessage(
-    @AuthPrincipal() { wallet }: Principal,
+    @AuthPrincipal() principal: Principal,
     @Param() { dialectPublicKey }: DialectResourceId,
     @Body() command: SendMessageCommandDto,
   ) {
     const dialect = await this.dialectService.sendMessage(
       command,
-      dialectPublicKey,
-      wallet,
+      { publicKey: dialectPublicKey, someMemberWalletId: principal.wallet.id },
+      principal,
     );
     return DialectAccountDto.fromDialect(dialect);
   }

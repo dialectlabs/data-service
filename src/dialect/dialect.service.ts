@@ -2,7 +2,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   ForbiddenException,
   Injectable,
-  NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
@@ -14,7 +13,6 @@ import { Member, Message, Scope, Wallet } from '@prisma/client';
 import {
   CreateDialectCommandDto,
   DialectMemberDto,
-  FindDialectQuery,
   MemberScopeDto,
   SendMessageCommandDto,
 } from './dialect.controller.dto';
@@ -22,8 +20,15 @@ import { PublicKey } from '@solana/web3.js';
 import { WalletService } from '../wallet/wallet.service';
 import { DialectAddressProvider } from './dialect-address-provider';
 import _ from 'lodash';
+import { Principal } from '../auth/authenticaiton.decorator';
 
 const DEFAULT_MESSAGES_PAGE_SIZE = 50;
+
+export interface FindDialectQuery {
+  publicKey?: string;
+  someMemberWalletId?: string;
+  memberWalletPublicKeys?: string[];
+}
 
 @Injectable()
 export class DialectService {
@@ -32,24 +37,40 @@ export class DialectService {
     private readonly walletService: WalletService,
   ) {}
 
+  async findOne(query: FindDialectQuery): Promise<MemberedAndMessagedDialect> {
+    const dialects = await this.findAll(query);
+    if (dialects.length > 1) {
+      throw new UnprocessableEntityException(
+        `Expected single dialect for given parameters.`,
+      );
+    }
+    return dialects[0];
+  }
+
   async findAll(
-    wallet: Wallet,
-    { memberPublicKey }: FindDialectQuery,
+    query: FindDialectQuery,
   ): Promise<MemberedAndMessagedDialect[]> {
     return this.prisma.dialect.findMany({
       where: {
-        members: {
-          some: {
-            walletId: wallet.id,
-          },
-          ...(memberPublicKey && {
+        ...(query.publicKey && { publicKey: query.publicKey }),
+        ...(query.someMemberWalletId && {
+          members: {
             some: {
+              walletId: query.someMemberWalletId,
+            },
+          },
+        }),
+        ...(query.memberWalletPublicKeys && {
+          members: {
+            every: {
               wallet: {
-                publicKey: memberPublicKey,
+                publicKey: {
+                  in: query.memberWalletPublicKeys,
+                },
               },
             },
-          }),
-        },
+          },
+        }),
       },
       include: {
         ...DIALECT_INCLUDES,
@@ -61,36 +82,6 @@ export class DialectService {
           take: 50,
         },
       },
-      orderBy: {
-        updatedAt: 'desc',
-      },
-    });
-  }
-
-  async find(
-    publicKey: string,
-    wallet: Wallet,
-  ): Promise<MemberedAndMessagedDialect> {
-    return this.prisma.dialect.findFirst({
-      where: {
-        publicKey,
-        members: {
-          some: {
-            walletId: wallet.id,
-          },
-        },
-      },
-      include: {
-        ...DIALECT_INCLUDES,
-        messages: {
-          ...DIALECT_INCLUDES.messages,
-          orderBy: {
-            timestamp: 'desc',
-          },
-          take: 50,
-        },
-      },
-      rejectOnNotFound: (e) => new NotFoundException(e),
     });
   }
 
@@ -131,7 +122,10 @@ export class DialectService {
   }
 
   async delete(publicKey: string, wallet: Wallet) {
-    const dialect = await this.find(publicKey, wallet);
+    const dialect = await this.findOne({
+      publicKey,
+      someMemberWalletId: wallet.id,
+    });
     if (
       !dialect.members.find(
         (m: WalletedMember) =>
@@ -151,15 +145,15 @@ export class DialectService {
 
   async sendMessage(
     command: SendMessageCommandDto,
-    dialectPublicKey: string,
-    wallet: Wallet,
+    findDialectQuery: FindDialectQuery,
+    principal: Principal,
   ): Promise<MemberedAndMessagedDialect> {
     // TODO: Reduce includes in this query since less is needed.
     const text = command.text;
-    const dialect = await this.find(dialectPublicKey, wallet);
-    const canWrite = this.checkWalletCanWriteTo(wallet, dialect);
+    const dialect = await this.findOne(findDialectQuery);
+    const canWrite = this.checkWalletCanWriteTo(principal.wallet, dialect);
     await this.postMessage(canWrite, dialect.id, text);
-    return this.find(dialectPublicKey, wallet);
+    return this.findOne(findDialectQuery);
   }
 
   private checkWalletCanWriteTo(
