@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   BroadcastNotificationCommand,
   MulticastNotificationCommand,
@@ -10,12 +10,13 @@ import { DappService } from './dapp.service';
 import { TelegramService } from '../telegram/telegram.service';
 import { MailService } from '../mail/mail.service';
 import { SmsService } from '../sms/sms.service';
-import { PrismaService } from '../prisma/prisma.service';
 import { DialectService } from '../dialect/dialect.service';
 import {
   DappAddressService,
   extractTelegramChatId,
 } from '../dapp-address/dapp-address.service';
+import { Principal } from '../auth/authenticaiton.decorator';
+import { UnencryptedTextSerde } from '@dialectlabs/web3';
 
 interface SendNotificationCommand {
   title: string;
@@ -24,11 +25,14 @@ interface SendNotificationCommand {
     dapp: Dapp;
     address: Address & { wallet: Wallet };
   })[];
-  dappPublicKey: string;
+  dapp: Principal;
 }
 
 @Injectable()
 export class DappNotificationsService {
+  private readonly textSerde = new UnencryptedTextSerde();
+  private readonly logger = new Logger(DappNotificationsService.name);
+
   constructor(
     private readonly dappService: DappService,
     private readonly dappAddress: DappAddressService,
@@ -36,13 +40,12 @@ export class DappNotificationsService {
     private readonly mail: MailService,
     private readonly sms: SmsService,
     private readonly dialect: DialectService,
-    private readonly prisma: PrismaService,
   ) {}
 
-  async unicast(command: UnicastNotificationCommand, dappPublicKey: string) {
+  async unicast(command: UnicastNotificationCommand, dapp: Principal) {
     const receivers = await this.dappAddress.findAll({
       dapp: {
-        publicKey: dappPublicKey,
+        publicKey: dapp.wallet.publicKey,
       },
       enabled: true,
       address: {
@@ -54,18 +57,15 @@ export class DappNotificationsService {
     });
     return this.send({
       ...command,
-      dappPublicKey,
+      dapp: dapp,
       receivers,
     });
   }
 
-  async multicast(
-    command: MulticastNotificationCommand,
-    dappPublicKey: string,
-  ) {
+  async multicast(command: MulticastNotificationCommand, dapp: Principal) {
     const receivers = await this.dappAddress.findAll({
       dapp: {
-        publicKey: dappPublicKey,
+        publicKey: dapp.wallet.publicKey,
       },
       enabled: true,
       address: {
@@ -77,18 +77,15 @@ export class DappNotificationsService {
     });
     return this.send({
       ...command,
-      dappPublicKey,
+      dapp,
       receivers,
     });
   }
 
-  async broadcast(
-    command: BroadcastNotificationCommand,
-    dappPublicKey: string,
-  ) {
+  async broadcast(command: BroadcastNotificationCommand, dapp: Principal) {
     const receivers = await this.dappAddress.findAll({
       dapp: {
-        publicKey: dappPublicKey,
+        publicKey: dapp.wallet.publicKey,
       },
       enabled: true,
       address: {
@@ -97,7 +94,7 @@ export class DappNotificationsService {
     });
     return this.send({
       ...command,
-      dappPublicKey,
+      dapp,
       receivers,
     });
   }
@@ -105,7 +102,7 @@ export class DappNotificationsService {
   async send(command: SendNotificationCommand) {
     const title = command.title;
     const message = command.message;
-    return Promise.allSettled(
+    const allSettled = Promise.allSettled(
       command.receivers.map(async (da) => {
         switch (da.address.type as PersistedAddressType) {
           case 'telegram':
@@ -117,8 +114,36 @@ export class DappNotificationsService {
             return this.mail.send(da.address.value, title, message);
           case 'sms':
             return this.sms.send(da.address.value, message);
+          case 'wallet':
+            return this.dialect.sendMessage(
+              Buffer.from(this.textSerde.serialize(command.message)),
+              {
+                encrypted: false,
+                memberWalletPublicKeys: [
+                  command.dapp.wallet.publicKey,
+                  da.address.wallet.publicKey,
+                ],
+              },
+              command.dapp,
+            );
         }
       }),
     );
+    allSettled.then((res) => {
+      const failures = res
+        .filter((it) => it.status === 'rejected')
+        .map((it) => it as PromiseRejectedResult)
+        .map((it) => it.reason);
+      if (failures.length > 0) {
+        this.logger.error(
+          `Failed to send notifications:\n ${JSON.stringify(
+            failures,
+            null,
+            2,
+          )}`,
+        );
+      }
+    });
+    return allSettled;
   }
 }

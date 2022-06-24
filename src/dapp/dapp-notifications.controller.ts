@@ -31,7 +31,7 @@ export class DappNotificationsController {
     @Body() command: UnicastNotificationCommand,
   ) {
     checkPrincipalAuthorizedToUseDapp(principal, dappPublicKey);
-    await this.dappNotificationsService.unicast(command, dappPublicKey);
+    await this.dappNotificationsService.unicast(command, principal);
   }
 
   @Post(':dappPublicKey/notifications/multicast')
@@ -41,7 +41,7 @@ export class DappNotificationsController {
     @Body() command: MulticastNotificationCommand,
   ) {
     checkPrincipalAuthorizedToUseDapp(principal, dappPublicKey);
-    await this.dappNotificationsService.multicast(command, dappPublicKey);
+    await this.dappNotificationsService.multicast(command, principal);
   }
 
   @Post(':dappPublicKey/notifications/broadcast')
@@ -51,6 +51,6 @@ export class DappNotificationsController {
     @Body() command: BroadcastNotificationCommand,
   ) {
     checkPrincipalAuthorizedToUseDapp(principal, dappPublicKey);
-    await this.dappNotificationsService.broadcast(command, dappPublicKey);
+    await this.dappNotificationsService.broadcast(command, principal);
   }
 }
