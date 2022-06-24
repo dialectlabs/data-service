@@ -4,9 +4,9 @@ import { AuthenticationGuard } from '../auth/authentication.guard';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 import { DappResourceId } from './dapp.controller.v1.dto';
 import {
-  BroadcastNotificationCommand,
-  MulticastNotificationCommand,
-  UnicastNotificationCommand,
+  BroadcastNotificationCommandDto,
+  MulticastNotificationCommandDto,
+  UnicastNotificationCommandDto,
 } from './dapp-notifications.controller.dto';
 import { DappNotificationsService } from './dapp-notifications.service';
 import { checkPrincipalAuthorizedToUseDapp } from './dapp.service';
@@ -28,7 +28,7 @@ export class DappNotificationsController {
   async unicast(
     @AuthPrincipal() principal: Principal,
     @Param() { dappPublicKey }: DappResourceId,
-    @Body() command: UnicastNotificationCommand,
+    @Body() command: UnicastNotificationCommandDto,
   ) {
     checkPrincipalAuthorizedToUseDapp(principal, dappPublicKey);
     await this.dappNotificationsService.unicast(command, principal);
@@ -38,7 +38,7 @@ export class DappNotificationsController {
   async multicast(
     @AuthPrincipal() principal: Principal,
     @Param() { dappPublicKey }: DappResourceId,
-    @Body() command: MulticastNotificationCommand,
+    @Body() command: MulticastNotificationCommandDto,
   ) {
     checkPrincipalAuthorizedToUseDapp(principal, dappPublicKey);
     await this.dappNotificationsService.multicast(command, principal);
@@ -48,7 +48,7 @@ export class DappNotificationsController {
   async broadcast(
     @AuthPrincipal() principal: Principal,
     @Param() { dappPublicKey }: DappResourceId,
-    @Body() command: BroadcastNotificationCommand,
+    @Body() command: BroadcastNotificationCommandDto,
   ) {
     checkPrincipalAuthorizedToUseDapp(principal, dappPublicKey);
     await this.dappNotificationsService.broadcast(command, principal);

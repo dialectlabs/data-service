@@ -1,7 +1,7 @@
 import { IsArray, IsString, ValidateNested } from 'class-validator';
 import { IsPublicKey } from '../middleware/public-key-validation';
 
-export class UnicastNotificationCommand {
+export class UnicastNotificationCommandDto {
   @IsString()
   title!: string;
   @IsString()
@@ -10,7 +10,7 @@ export class UnicastNotificationCommand {
   receiverPublicKey!: string;
 }
 
-export class MulticastNotificationCommand {
+export class MulticastNotificationCommandDto {
   @IsString()
   title!: string;
   @IsString()
@@ -21,7 +21,7 @@ export class MulticastNotificationCommand {
   receiverPublicKeys!: string[];
 }
 
-export class BroadcastNotificationCommand {
+export class BroadcastNotificationCommandDto {
   @IsString()
   title!: string;
   @IsString()

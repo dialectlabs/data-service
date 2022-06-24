@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
-  BroadcastNotificationCommand,
-  MulticastNotificationCommand,
-  UnicastNotificationCommand,
+  BroadcastNotificationCommandDto,
+  MulticastNotificationCommandDto,
+  UnicastNotificationCommandDto,
 } from './dapp-notifications.controller.dto';
 import { Address, Dapp, DappAddress, Wallet } from '@prisma/client';
 import { PersistedAddressType } from '../address/address.repository';
@@ -42,7 +42,7 @@ export class DappNotificationsService {
     private readonly dialect: DialectService,
   ) {}
 
-  async unicast(command: UnicastNotificationCommand, dapp: Principal) {
+  async unicast(command: UnicastNotificationCommandDto, dapp: Principal) {
     const receivers = await this.dappAddress.findAll({
       dapp: {
         publicKey: dapp.wallet.publicKey,
@@ -62,7 +62,7 @@ export class DappNotificationsService {
     });
   }
 
-  async multicast(command: MulticastNotificationCommand, dapp: Principal) {
+  async multicast(command: MulticastNotificationCommandDto, dapp: Principal) {
     const receivers = await this.dappAddress.findAll({
       dapp: {
         publicKey: dapp.wallet.publicKey,
@@ -82,7 +82,7 @@ export class DappNotificationsService {
     });
   }
 
-  async broadcast(command: BroadcastNotificationCommand, dapp: Principal) {
+  async broadcast(command: BroadcastNotificationCommandDto, dapp: Principal) {
     const receivers = await this.dappAddress.findAll({
       dapp: {
         publicKey: dapp.wallet.publicKey,
