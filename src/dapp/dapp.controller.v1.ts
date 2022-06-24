@@ -19,13 +19,13 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { checkPrincipalAuthorizedToUseDapp } from './dapp.service';
 import { DappAddressService } from '../dapp-address/dapp-address.service';
+import { DappAuthenticationGuard } from '../auth/dapp-authentication.guard';
 
 @ApiTags('Dapps')
 @Controller({
   path: 'dapps',
   version: '1',
 })
-@UseGuards(AuthenticationGuard)
 @ApiBearerAuth()
 export class DappControllerV1 {
   constructor(
@@ -34,6 +34,7 @@ export class DappControllerV1 {
   ) {}
 
   @Post()
+  @UseGuards(AuthenticationGuard)
   async create(
     @AuthPrincipal() principal: Principal,
     @Body() command: CreateDappCommand,
@@ -48,6 +49,7 @@ export class DappControllerV1 {
   }
 
   @Get(':dappPublicKey')
+  @UseGuards(AuthenticationGuard, DappAuthenticationGuard)
   async findOne(
     @AuthPrincipal() principal: Principal,
     @Param() { dappPublicKey }: DappResourceId,
@@ -63,6 +65,7 @@ export class DappControllerV1 {
   }
 
   @Get(':dappPublicKey/dappAddresses')
+  @UseGuards(AuthenticationGuard, DappAuthenticationGuard)
   async findAllDappAddresses(
     @AuthPrincipal() principal: Principal,
     @Param() { dappPublicKey }: DappResourceId,
