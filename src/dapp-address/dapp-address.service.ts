@@ -16,6 +16,7 @@ export class DappAddressService {
 
   async findAll(query: FindDappAddressesQuery) {
     const findAddressQuery = query.address;
+    const findWalletQuery = query.address?.wallet;
     const findDappQuery = query.dapp;
     return this.prisma.dappAddress.findMany({
       where: {
@@ -30,8 +31,17 @@ export class DappAddressService {
             ...(findAddressQuery.verified && {
               verified: findAddressQuery.verified,
             }),
-            ...(findAddressQuery.walletId && {
-              walletId: findAddressQuery.walletId,
+            ...(findWalletQuery && {
+              wallet: {
+                ...(findWalletQuery.id && {
+                  id: findWalletQuery.id,
+                }),
+                ...(findWalletQuery.publicKeys && {
+                  publicKey: {
+                    in: findWalletQuery.publicKeys,
+                  },
+                }),
+              },
             }),
           },
         }),

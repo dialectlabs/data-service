@@ -26,6 +26,8 @@ export class NoopTelegramService extends TelegramService {
 
 @Update()
 export class TelefrafTelegramService extends TelegramService {
+  private readonly logger = new Logger(TelefrafTelegramService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     @InjectBot() private bot: Telegraf,
@@ -36,10 +38,9 @@ export class TelefrafTelegramService extends TelegramService {
   async send(telegramId: string, body: string) {
     try {
       const res = this.bot.telegram.sendMessage(telegramId, body);
-      // avoid this on production. use log instead :)
-      console.log(`Telegram message sent to ${res}`);
+      this.logger.log(`Telegram message sent to ${res}`);
     } catch (e: any) {
-      console.log('Error sending Telegram message:', e);
+      this.logger.error('Error sending Telegram message:', e);
     }
   }
 

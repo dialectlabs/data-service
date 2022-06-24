@@ -49,7 +49,9 @@ export class WalletDappAddressesControllerV1 {
       },
       address: {
         ids: query.addressIds,
-        walletId: wallet.id,
+        wallet: {
+          id: wallet.id,
+        },
       },
     });
     return dappAddresses.map((it) => DappAddressDto.from(it));

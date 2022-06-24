@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { SendNotificationCommand } from './dapp-notifications.controller.dto';
-import { Address, DappAddress, Prisma } from '@prisma/client';
+import {
+  BroadcastNotificationCommand,
+  MulticastNotificationCommand,
+  UnicastNotificationCommand,
+} from './dapp-notifications.controller.dto';
+import { Address, Dapp, DappAddress, Wallet } from '@prisma/client';
 import { PersistedAddressType } from '../address/address.repository';
 import { DappService } from './dapp.service';
 import { TelegramService } from '../telegram/telegram.service';
@@ -8,11 +12,26 @@ import { MailService } from '../mail/mail.service';
 import { SmsService } from '../sms/sms.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { DialectService } from '../dialect/dialect.service';
+import {
+  DappAddressService,
+  extractTelegramChatId,
+} from '../dapp-address/dapp-address.service';
+
+interface SendNotificationCommand {
+  title: string;
+  message: string;
+  receivers: (DappAddress & {
+    dapp: Dapp;
+    address: Address & { wallet: Wallet };
+  })[];
+  dappPublicKey: string;
+}
 
 @Injectable()
 export class DappNotificationsService {
   constructor(
     private readonly dappService: DappService,
+    private readonly dappAddress: DappAddressService,
     private readonly telegram: TelegramService,
     private readonly mail: MailService,
     private readonly sms: SmsService,
@@ -20,63 +39,84 @@ export class DappNotificationsService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async send(dappPublicKey: string, command: SendNotificationCommand) {
-    const dapp = await this.dappService.findOne(dappPublicKey);
-    const title = command.title;
-    const message = command.message;
-    let addressQuery;
-    if (title) {
-      // omit all wallets since this is handled client side for now
-      addressQuery = {
-        NOT: {
-          type: 'wallet',
-        },
-        verified: true,
-      };
-    } else {
-      // if no title, omit email address types
-      addressQuery = {
-        NOT: {
-          OR: [{ type: 'wallet' }, { type: 'email' }],
-        },
-        verified: true,
-      };
-    }
-
-    const dappAddresses = await this.prisma.dappAddress.findMany({
-      where: {
-        dappId: dapp.id,
-        enabled: true,
-        address: addressQuery,
+  async unicast(command: UnicastNotificationCommand, dappPublicKey: string) {
+    const receivers = await this.dappAddress.findAll({
+      dapp: {
+        publicKey: dappPublicKey,
       },
-      include: {
-        address: true,
+      enabled: true,
+      address: {
+        verified: true,
+        wallet: {
+          publicKeys: [command.receiverPublicKey],
+        },
       },
     });
+    return this.send({
+      ...command,
+      dappPublicKey,
+      receivers,
+    });
+  }
 
-    await Promise.all(
-      dappAddresses.map(async (da: DappAddress & { address: Address }) => {
+  async multicast(
+    command: MulticastNotificationCommand,
+    dappPublicKey: string,
+  ) {
+    const receivers = await this.dappAddress.findAll({
+      dapp: {
+        publicKey: dappPublicKey,
+      },
+      enabled: true,
+      address: {
+        verified: true,
+        wallet: {
+          publicKeys: command.receiverPublicKeys,
+        },
+      },
+    });
+    return this.send({
+      ...command,
+      dappPublicKey,
+      receivers,
+    });
+  }
+
+  async broadcast(
+    command: BroadcastNotificationCommand,
+    dappPublicKey: string,
+  ) {
+    const receivers = await this.dappAddress.findAll({
+      dapp: {
+        publicKey: dappPublicKey,
+      },
+      enabled: true,
+      address: {
+        verified: true,
+      },
+    });
+    return this.send({
+      ...command,
+      dappPublicKey,
+      receivers,
+    });
+  }
+
+  async send(command: SendNotificationCommand) {
+    const title = command.title;
+    const message = command.message;
+    return Promise.allSettled(
+      command.receivers.map(async (da) => {
         switch (da.address.type as PersistedAddressType) {
           case 'telegram':
-            // TODO: Hide this stuff in a object method.
-            const metadata = da.metadata as Prisma.JsonObject;
-            const chat_id: Prisma.JsonValue | undefined =
-              metadata['telegram_chat_id'];
-            if (!chat_id || typeof chat_id !== 'string') break;
-            await this.telegram.send(chat_id, message);
-            break;
+            const telegramChatId = extractTelegramChatId(da);
+            return (
+              telegramChatId && this.telegram.send(telegramChatId, message)
+            );
           case 'email':
-            if (!title) break; // should never happen because of query above
-            await this.mail.send(da.address.value, title, message);
-            break;
+            return this.mail.send(da.address.value, title, message);
           case 'sms':
-            await this.sms.send(da.address.value, message);
-            break;
-          case 'wallet':
-            // noop, for now
-            break;
-          default:
-            break;
+            return this.sms.send(da.address.value, message);
         }
       }),
     );

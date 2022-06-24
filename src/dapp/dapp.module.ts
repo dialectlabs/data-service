@@ -21,7 +21,7 @@ import { DialectModule } from '../dialect/dialect.module';
     DappAddressModule,
     DialectModule,
   ],
-  providers: [DappService, DappNotificationsService, DappControllerV1],
+  providers: [DappService, DappNotificationsService],
   exports: [DappService],
   controllers: [
     DappControllerV0,
