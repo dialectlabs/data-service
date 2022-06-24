@@ -15,6 +15,7 @@ import { DappAddressModule } from './dapp-address/dapp-address.module';
     ConfigModule.forRoot(),
     LoggerModule.forRoot({
       pinoHttp: {
+        redact: ['req.headers.authorization', 'res.headers'],
         autoLogging: {
           ignore: (msg) => {
             if (msg.statusCode && msg.statusCode >= 400) {
