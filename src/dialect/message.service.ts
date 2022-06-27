@@ -25,6 +25,7 @@ export class MessageService {
     return this.prisma.message.findMany({
       where: {
         dialect: {
+          encrypted: false,
           members: {
             some: {
               walletId: query.wallet.id,

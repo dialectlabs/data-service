@@ -1,11 +1,11 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 import { AuthenticationGuard } from '../auth/authentication.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { MessageDto } from '../dialect/dialect.controller.dto';
 import { MessageService } from '../dialect/message.service';
-import { FindDappMessagesQueryDto } from './wallet-messages.controller.v1.dto';
+import { FindDappMessagesQueryDto } from './wallet-messages.controller.dto';
 
 @ApiTags('Wallet messages')
 @ApiBearerAuth()
@@ -14,7 +14,7 @@ import { FindDappMessagesQueryDto } from './wallet-messages.controller.v1.dto';
   path: 'wallets/me',
   version: '1',
 })
-export class WalletAddressesControllerV1 {
+export class WalletMessagesController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly messageService: MessageService,
@@ -23,7 +23,7 @@ export class WalletAddressesControllerV1 {
   @Get('/dappMessages')
   async findAll(
     @AuthPrincipal() { wallet }: Principal,
-    query: FindDappMessagesQueryDto,
+    @Query() query: FindDappMessagesQueryDto,
   ): Promise<MessageDto[]> {
     const messages = await this.messageService.findAllDappMessages({
       wallet,
