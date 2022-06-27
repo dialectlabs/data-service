@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Query,
-  UseGuards,
-  ValidationPipe,
-} from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 import { AuthenticationGuard } from '../auth/authentication.guard';
@@ -29,8 +23,7 @@ export class WalletMessagesController {
   @Get('/dappMessages')
   async findAll(
     @AuthPrincipal() { wallet }: Principal,
-    @Query(new ValidationPipe({ transform: true }))
-    query: FindDappMessagesQueryDto,
+    @Query() query: FindDappMessagesQueryDto,
   ): Promise<MessageDto[]> {
     const messages = await this.messageService.findAllDappMessages({
       wallet,

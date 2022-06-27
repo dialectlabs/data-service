@@ -1,6 +1,6 @@
 import { IsPublicKey } from '../middleware/public-key-validation';
 import { Dapp } from '@prisma/client';
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class DappDto {
@@ -25,6 +25,7 @@ export class CreateDappCommandDto {
   @IsPublicKey()
   readonly publicKey!: string;
   @IsString()
+  @IsNotEmpty()
   readonly name!: string;
   @IsString()
   @IsOptional()

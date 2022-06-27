@@ -6,7 +6,6 @@ import {
   Post,
   Query,
   UseGuards,
-  ValidationPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthenticationGuard } from '../auth/authentication.guard';
@@ -46,9 +45,8 @@ export class DappControllerV1 {
   }
 
   @Get()
-  async findAll(
-    @Query(new ValidationPipe({ transform: true })) query: FindDappsQueryDto,
-  ): Promise<DappDto[]> {
+  @UseGuards(AuthenticationGuard)
+  async findAll(@Query() query: FindDappsQueryDto): Promise<DappDto[]> {
     const dapps = await this.dappService.findAll(query);
     return dapps.map((dapp) => DappDto.from(dapp));
   }

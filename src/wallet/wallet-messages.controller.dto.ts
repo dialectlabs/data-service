@@ -1,15 +1,17 @@
-import { IsBoolean, IsNumber, IsOptional, Max, Min } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsBoolean, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 
 export class FindDappMessagesQueryDto {
-  @IsNumber()
+  @IsInt()
   @IsOptional()
   @Min(0)
+  @Type(() => Number)
   readonly skip?: number;
-  @IsNumber()
+  @IsInt()
   @IsOptional()
   @Min(0)
   @Max(500)
+  @Type(() => Number)
   readonly take?: number;
   @IsBoolean()
   @IsOptional()
