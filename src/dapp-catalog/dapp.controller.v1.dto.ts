@@ -1,6 +1,7 @@
 import { IsPublicKey } from '../middleware/public-key-validation';
 import { Dapp } from '@prisma/client';
 import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class DappDto {
   id!: string;
@@ -38,5 +39,10 @@ export class DappResourceId {
 export class FindDappsQueryDto {
   @IsOptional()
   @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
   readonly verified?: boolean;
 }
