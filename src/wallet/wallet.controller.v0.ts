@@ -7,6 +7,7 @@ import {
   Get,
   HttpException,
   HttpStatus,
+  NotFoundException,
   Param,
   Post,
   Put,
@@ -20,13 +21,13 @@ import {
   PutDappAddressDto,
   VerifyAddressDto,
 } from './wallet.controller.v0.dto';
-import { DappService } from '../dapp/dapp.service';
 import { AuthenticationGuard } from '../auth/authentication.guard';
-import { MailVerificationService } from '../mail/mail.service';
+import { MailService } from '../mail/mail.service';
 import { generateVerificationCode } from 'src/utils';
-import { SmsVerificationService } from 'src/sms/sms.service';
+import { SmsService } from 'src/sms/sms.service';
 import { PublicKeyValidationPipe } from '../middleware/public-key-validation';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
+import { IllegalStateError } from '@dialectlabs/sdk';
 
 @ApiTags('Wallets')
 @Controller({
@@ -35,9 +36,8 @@ import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 export class WalletControllerV0 {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly dappService: DappService,
-    private readonly mailService: MailVerificationService,
-    private readonly smsVerificationService: SmsVerificationService,
+    private readonly mailService: MailService,
+    private readonly smsService: SmsService,
   ) {}
 
   /**
@@ -100,7 +100,7 @@ export class WalletControllerV0 {
     @Param('public_key', PublicKeyValidationPipe) publicKey: string,
     @Param('dapp', PublicKeyValidationPipe) dappPublicKey: string,
   ): Promise<DappAddressDto[]> {
-    const dapp = await this.dappService.lookupDapp(dappPublicKey);
+    const dapp = await this.findDapp(dappPublicKey);
     // Query for all addresses for a wallet
     const addresses = await this.prisma.address.findMany({
       where: {
@@ -112,6 +112,7 @@ export class WalletControllerV0 {
         dappAddresses: true,
       },
     });
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     return addresses.map((address) => {
       // Filter for only the dapp addresses affiliated with this dapp.
@@ -156,7 +157,7 @@ export class WalletControllerV0 {
     @Param('dapp', PublicKeyValidationPipe) dappPublicKey: string,
     @Body() postDappAddressDto: PostDappAddressDto,
   ): Promise<DappAddressDto> {
-    const dapp = await this.dappService.lookupDapp(dappPublicKey);
+    const dapp = await this.findDapp(dappPublicKey);
 
     const addressId = postDappAddressDto.addressId;
     const type = postDappAddressDto.type;
@@ -201,7 +202,7 @@ export class WalletControllerV0 {
       if (type == 'email') {
         this.mailService.sendVerificationCode(value, code);
       } else if (type == 'sms') {
-        this.smsVerificationService.sendVerificationCode(value, code);
+        this.smsService.sendVerificationCode(value, code);
       }
     } else if (value) {
       /**
@@ -267,7 +268,6 @@ export class WalletControllerV0 {
 
     let dappAddress;
     try {
-      console.log(`${address.id}`);
       /*
       TODO: !!! This code assumes there is only one telegram bot, hence only one telegram_chat_id, created at the original /start event from telegram.service.ts.
 
@@ -275,20 +275,25 @@ export class WalletControllerV0 {
       */
       const otherDappAddress = await this.prisma.dappAddress.findFirst({
         where: {
-          addressId: address.id,
+          addressId: address!.id,
           NOT: {
             // We assume if it's not undefined then it has a telegram_chat_id
             metadata: undefined,
           },
         },
       });
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       const metadata = otherDappAddress?.metadata?.telegram_chat_id
         ? {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             telegram_chat_id: otherDappAddress?.metadata?.telegram_chat_id,
           }
         : undefined;
+      if (!address) {
+        throw new IllegalStateError('Address is not defined');
+      }
       dappAddress = await this.prisma.dappAddress.create({
         data: {
           enabled,
@@ -350,8 +355,7 @@ export class WalletControllerV0 {
     @Param('dapp', PublicKeyValidationPipe) dappPublicKey: string,
     @Body() putDappAddressDto: PutDappAddressDto,
   ): Promise<DappAddressDto> {
-    await this.dappService.lookupDapp(dappPublicKey);
-
+    await this.findDapp(dappPublicKey);
     const addressId = putDappAddressDto.addressId;
     const value = putDappAddressDto.value;
     const enabled = putDappAddressDto.enabled;
@@ -395,7 +399,7 @@ export class WalletControllerV0 {
       if (address?.type == 'email') {
         this.mailService.sendVerificationCode(value, code);
       } else if (address?.type == 'sms') {
-        this.smsVerificationService.sendVerificationCode(value, code);
+        this.smsService.sendVerificationCode(value, code);
       }
 
       if (!address)
@@ -477,7 +481,7 @@ export class WalletControllerV0 {
     @Param('dapp', PublicKeyValidationPipe) dappPublicKey: string,
     @Body() verifyAddressDto: VerifyAddressDto,
   ): Promise<any> {
-    const dapp = await this.dappService.lookupDapp(dappPublicKey);
+    const dapp = await this.findDapp(dappPublicKey);
 
     const address = await this.prisma.address.findUnique({
       where: { id: verifyAddressDto.addressId },
@@ -507,7 +511,7 @@ export class WalletControllerV0 {
       },
     });
 
-    let dappAddress = await this.prisma.dappAddress.findUnique({
+    const dappAddress = await this.prisma.dappAddress.findUnique({
       where: {
         id: id,
       },
@@ -579,7 +583,16 @@ export class WalletControllerV0 {
     if (address.type == 'email') {
       this.mailService.sendVerificationCode(address.value, code);
     } else if (address.type == 'sms') {
-      this.smsVerificationService.sendVerificationCode(address.value, code);
+      this.smsService.sendVerificationCode(address.value, code);
     }
+  }
+
+  private async findDapp(dappPublicKey: string) {
+    return this.prisma.dapp.findUnique({
+      where: {
+        publicKey: dappPublicKey,
+      },
+      rejectOnNotFound: (e) => new NotFoundException(e.message),
+    });
   }
 }

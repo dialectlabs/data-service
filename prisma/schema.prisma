@@ -62,13 +62,18 @@ model Address {
 
 model Dapp {
   // generic columns
-  id        String   @id @default(uuid()) @db.Uuid
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  id             String  @id @default(uuid()) @db.Uuid
+  name           String @map("name")
+  description    String? @map("description")
+  logo_image_url String? @map("logo_image_url")
+  verified       Boolean @default(false)
 
-  // columns
   publicKey   String  @unique @map("public_key")
   telegramKey String? @map("telegram_key")
+
+  // generic columns
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   // relations
   dappAddresses DappAddress[]

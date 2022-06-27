@@ -1,9 +1,12 @@
-import { Ctx, Start, Update } from 'nestjs-telegraf';
+import { Ctx, InjectBot, Start, Update } from 'nestjs-telegraf';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Logger } from '@nestjs/common';
 import { Address } from '@prisma/client';
+import { Telegraf } from 'telegraf';
 
-export abstract class TelegramService {}
+export abstract class TelegramService {
+  abstract send(telegramId: string, body: string): Promise<void>;
+}
 
 export class NoopTelegramService extends TelegramService {
   private readonly logger = new Logger(NoopTelegramService.name);
@@ -14,11 +17,32 @@ export class NoopTelegramService extends TelegramService {
       `Using ${NoopTelegramService.name} to send verification codes: real telegram bot not started`,
     );
   }
+
+  send(telegramId: string, body: string): Promise<void> {
+    this.logger.log(`Sending ${body} to ${telegramId}`);
+    return Promise.resolve();
+  }
 }
 
 @Update()
-export class TelefrafTelegramService {
-  constructor(private readonly prisma: PrismaService) {}
+export class TelefrafTelegramService extends TelegramService {
+  private readonly logger = new Logger(TelefrafTelegramService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @InjectBot() private bot: Telegraf,
+  ) {
+    super();
+  }
+
+  async send(telegramId: string, body: string) {
+    try {
+      const res = this.bot.telegram.sendMessage(telegramId, body);
+      this.logger.log(`Telegram message sent to ${res}`);
+    } catch (e: any) {
+      this.logger.error('Error sending Telegram message:', e);
+    }
+  }
 
   @Start()
   async start(@Ctx() ctx: any) {

@@ -1,20 +1,22 @@
 import { Logger } from '@nestjs/common';
 import sgMail from '@sendgrid/mail';
 
-export abstract class MailVerificationService {
+export abstract class MailService {
   abstract sendVerificationCode(
     recipientSmsNumber: string,
     verificationCode: string,
   ): Promise<any>;
+
+  abstract send(to: string, subject: string, html: string): Promise<void>;
 }
 
-export class NoopMailVerificationService extends MailVerificationService {
-  private readonly logger = new Logger(NoopMailVerificationService.name);
+export class NoopMailService extends MailService {
+  private readonly logger = new Logger(NoopMailService.name);
 
   constructor() {
     super();
     this.logger.warn(
-      `Using ${NoopMailVerificationService.name} to send verification codes: no real mail messages will be sent`,
+      `Using ${NoopMailService.name} to send verification codes: no real mail messages will be sent`,
     );
   }
 
@@ -26,10 +28,14 @@ export class NoopMailVerificationService extends MailVerificationService {
       `Sending verification code ${verificationCode} to ${email}`,
     );
   }
+
+  async send(to: string, subject: string, html: string): Promise<void> {
+    this.logger.log(`Sending email ${html} from ${subject} to ${to}`);
+  }
 }
 
-export class SendGridMailVerificationService extends MailVerificationService {
-  private readonly logger = new Logger(SendGridMailVerificationService.name);
+export class SendGridMailService extends MailService {
+  private readonly logger = new Logger(SendGridMailService.name);
 
   constructor() {
     super();
@@ -37,22 +43,29 @@ export class SendGridMailVerificationService extends MailVerificationService {
     sgMail.setApiKey(key);
   }
 
-  async sendVerificationCode(email: string, verificationCode: string) {
+  async send(to: string, subject: string, html: string) {
     const mail = {
-      to: email,
-      subject: 'Hello from Dialect — Verify your email address',
+      to,
+      subject,
       from: String(process.env.SENDGRID_EMAIL),
-      html: `Welcome to Dialect. Please confirm your email address using the code provided below:
-      <h1>${verificationCode}</h1>
-      If you didn't sign up for web3 notifications using Dialect, you can ignore this email.`,
+      html,
     };
 
     try {
       const transport = await sgMail.send(mail);
       // avoid this on production. use log instead :)
-      this.logger.log(`E-Mail sent to ${transport}`);
+      this.logger.log(`Email sent to ${transport}`);
     } catch (e: any) {
-      this.logger.error(e['response'].body);
+      this.logger.error('Error sending SendGrid mail:', e['response'].body);
     }
+  }
+
+  async sendVerificationCode(email: string, code: string) {
+    const subject = 'Hello from Dialect — Verify your email address';
+    const html = `Welcome to Dialect. Please confirm your email address using the code provided below:
+<h1>${code}</h1>
+If you didn't sign up for web3 notifications using Dialect, you can ignore this email.`;
+
+    return await this.send(email, subject, html);
   }
 }

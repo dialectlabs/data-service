@@ -13,19 +13,19 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 import {
-  CreateDappAddressCommand,
+  CreateDappAddressCommandDto,
   DappAddressDto,
   DappAddressResourceId,
-  FindDappAddressesQuery,
-  PatchDappAddressCommand,
+  FindDappAddressesQueryDto,
+  PatchDappAddressCommandDto,
 } from '../dapp-address/dapp-address.controller.dto';
 import { AuthenticationGuard } from '../auth/authentication.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { Address, Dapp, DappAddress, Wallet } from '@prisma/client';
 import { PersistedAddressType } from '../address/address.repository';
+import { DappAddressService } from '../dapp-address/dapp-address.service';
 
-// https://stackoverflow.com/questions/35719797/is-using-magic-me-self-resource-identifiers-going-against-rest-principles
-@ApiTags('Wallet dapp address')
+@ApiTags('Wallet dapp addresses')
 @ApiBearerAuth()
 @UseGuards(AuthenticationGuard)
 @Controller({
@@ -33,39 +33,28 @@ import { PersistedAddressType } from '../address/address.repository';
   version: '1',
 })
 export class WalletDappAddressesControllerV1 {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly dappAddressService: DappAddressService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Get('/')
   async findAll(
     @AuthPrincipal() { wallet }: Principal,
-    @Query() query: FindDappAddressesQuery,
+    @Query() query: FindDappAddressesQueryDto,
   ): Promise<DappAddressDto[]> {
-    const dappAddressses = await this.prisma.dappAddress.findMany({
-      where: {
-        address: {
-          walletId: wallet.id,
-        },
-        ...(query.addressIds && {
-          addressId: {
-            in: query.addressIds,
-          },
-        }),
-        ...(query.dappPublicKey && {
-          dapp: {
-            publicKey: query.dappPublicKey,
-          },
-        }),
+    const dappAddresses = await this.dappAddressService.findAll({
+      dapp: {
+        publicKey: query.dappPublicKey,
       },
-      include: {
-        dapp: true,
-        address: {
-          include: {
-            wallet: true,
-          },
+      address: {
+        ids: query.addressIds,
+        wallet: {
+          id: wallet.id,
         },
       },
     });
-    return dappAddressses.map((it) => DappAddressDto.from(it));
+    return dappAddresses.map((it) => DappAddressDto.from(it));
   }
 
   @Get('/:dappAddressId')
@@ -96,7 +85,7 @@ export class WalletDappAddressesControllerV1 {
   @Post('/')
   async create(
     @AuthPrincipal() { wallet }: Principal,
-    @Body() command: CreateDappAddressCommand,
+    @Body() command: CreateDappAddressCommandDto,
   ): Promise<DappAddressDto> {
     const dappAddress = await this.prisma.dappAddress.create({
       data: {
@@ -130,6 +119,10 @@ export class WalletDappAddressesControllerV1 {
     return DappAddressDto.from(dappAddress);
   }
 
+  /*
+  TODO: This code assumes there is only one telegram bot,
+   hence only one telegram_chat_id, created at the original /start event from telegram.service.ts.
+  */
   private async tryFillTelegramMetadata(
     dappAddress: DappAddress & {
       dapp: Dapp;
@@ -185,7 +178,7 @@ export class WalletDappAddressesControllerV1 {
   async patch(
     @AuthPrincipal() { wallet }: Principal,
     @Param() { dappAddressId }: DappAddressResourceId,
-    @Body() command: PatchDappAddressCommand,
+    @Body() command: PatchDappAddressCommandDto,
   ): Promise<DappAddressDto> {
     await this.findOne({ wallet }, { dappAddressId });
     const dappAddress = await this.prisma.dappAddress.update({

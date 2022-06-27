@@ -2,11 +2,13 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
 import { DialectController } from './dialect.controller';
 import { DialectService } from './dialect.service';
-import { WalletModule } from '../wallet/wallet.module';
+import { MessageService } from './message.service';
+import { DappModule } from '../dapp-catalog/dapp.module';
 
 @Module({
-  imports: [PrismaModule, WalletModule],
-  providers: [DialectService],
+  imports: [PrismaModule, DappModule],
+  providers: [DialectService, MessageService],
+  exports: [DialectService, MessageService],
   controllers: [DialectController],
 })
 export class DialectModule {}

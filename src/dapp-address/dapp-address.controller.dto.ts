@@ -3,7 +3,7 @@ import { Address, Dapp, DappAddress, Wallet } from '@prisma/client';
 import { extractTelegramChatId } from './dapp-address.service';
 import { IsPublicKey } from '../middleware/public-key-validation';
 import { IsBoolean, IsOptional, IsUUID } from 'class-validator';
-import { DappDto } from '../dapp/dapp.controller.v1.dto';
+import { DappDto } from '../dapp-catalog/dapp.controller.v1.dto';
 
 export class DappAddressDto {
   readonly id!: string;
@@ -33,7 +33,7 @@ export class DappAddressResourceId {
   readonly dappAddressId!: string;
 }
 
-export class FindDappAddressesQuery {
+export class FindDappAddressesQueryDto {
   @IsOptional()
   @IsPublicKey()
   readonly dappPublicKey?: string;
@@ -42,7 +42,7 @@ export class FindDappAddressesQuery {
   readonly addressIds?: string[];
 }
 
-export class CreateDappAddressCommand {
+export class CreateDappAddressCommandDto {
   @IsPublicKey()
   readonly dappPublicKey!: string;
   @IsUUID('4')
@@ -51,7 +51,7 @@ export class CreateDappAddressCommand {
   readonly enabled!: boolean;
 }
 
-export class PatchDappAddressCommand {
+export class PatchDappAddressCommandDto {
   @IsOptional()
   @IsBoolean()
   readonly enabled?: boolean;

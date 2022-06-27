@@ -25,12 +25,13 @@ async function seedDev() {
     },
     update: {},
   });
-  const dapp = await prisma.dapp.upsert({
+  await prisma.dapp.upsert({
     where: {
       id: '44a34c33-9938-49f3-935c-dcbf35d1b5a3',
     },
     create: {
       id: '44a34c33-9938-49f3-935c-dcbf35d1b5a3',
+      name: 'dialect',
       publicKey: 'D1ALECTfeCZt9bAbPWtJk7ntv24vDYGPmyS7swp7DY5h',
     },
     update: {},
@@ -42,11 +43,12 @@ async function seedDev() {
     },
     create: {
       id: 'e191eb46-3fa2-483f-abb7-24645b634666',
+      name: 'dialect-devnet',
       publicKey: 'D2pyBevYb6dit1oCx6e8vCxFK9mBeYCRe8TTntk2Tm98',
     },
     update: {},
   });
-  const dappAddress = await prisma.dappAddress.upsert({
+  await prisma.dappAddress.upsert({
     where: {
       id: '44a34c33-9938-49f3-935c-dcbf35d1b5a4',
     },

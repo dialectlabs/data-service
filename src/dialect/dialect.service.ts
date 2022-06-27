@@ -2,7 +2,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   ForbiddenException,
   Injectable,
-  NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
@@ -14,42 +13,75 @@ import { Member, Message, Scope, Wallet } from '@prisma/client';
 import {
   CreateDialectCommandDto,
   DialectMemberDto,
-  FindDialectQuery,
   MemberScopeDto,
-  SendMessageCommandDto,
 } from './dialect.controller.dto';
 import { PublicKey } from '@solana/web3.js';
-import { WalletService } from '../wallet/wallet.service';
 import { DialectAddressProvider } from './dialect-address-provider';
 import _ from 'lodash';
+import { Principal } from '../auth/authenticaiton.decorator';
 
 const DEFAULT_MESSAGES_PAGE_SIZE = 50;
 
+export interface FindDialectQuery {
+  publicKey?: string;
+  someMemberWalletId?: string;
+  memberWalletPublicKeys?: string[];
+  encrypted?: boolean;
+}
+
 @Injectable()
 export class DialectService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly walletService: WalletService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
+
+  async findOneFailFast(
+    query: FindDialectQuery,
+  ): Promise<MemberedAndMessagedDialect> {
+    const dialect = await this.findOneFailSafe(query);
+    if (!dialect) {
+      throw new UnprocessableEntityException(
+        `Cannot find dialect using given query: ${JSON.stringify(query)}`,
+      );
+    }
+    return dialect;
+  }
+
+  async findOneFailSafe(
+    query: FindDialectQuery,
+  ): Promise<MemberedAndMessagedDialect | null> {
+    const dialects = await this.findAll(query);
+    if (dialects.length > 1) {
+      throw new UnprocessableEntityException(
+        `Expected single dialect for given parameters.`,
+      );
+    }
+    return dialects[0] ?? null;
+  }
 
   async findAll(
-    wallet: Wallet,
-    { memberPublicKey }: FindDialectQuery,
+    query: FindDialectQuery,
   ): Promise<MemberedAndMessagedDialect[]> {
     return this.prisma.dialect.findMany({
       where: {
-        members: {
-          some: {
-            walletId: wallet.id,
-          },
-          ...(memberPublicKey && {
+        ...(query.publicKey && { publicKey: query.publicKey }),
+        ...(query.encrypted && { encrypted: query.encrypted }),
+        ...(query.someMemberWalletId && {
+          members: {
             some: {
+              walletId: query.someMemberWalletId,
+            },
+          },
+        }),
+        ...(query.memberWalletPublicKeys && {
+          members: {
+            every: {
               wallet: {
-                publicKey: memberPublicKey,
+                publicKey: {
+                  in: query.memberWalletPublicKeys,
+                },
               },
             },
-          }),
-        },
+          },
+        }),
       },
       include: {
         ...DIALECT_INCLUDES,
@@ -61,36 +93,6 @@ export class DialectService {
           take: 50,
         },
       },
-      orderBy: {
-        updatedAt: 'desc',
-      },
-    });
-  }
-
-  async find(
-    publicKey: string,
-    wallet: Wallet,
-  ): Promise<MemberedAndMessagedDialect> {
-    return this.prisma.dialect.findFirst({
-      where: {
-        publicKey,
-        members: {
-          some: {
-            walletId: wallet.id,
-          },
-        },
-      },
-      include: {
-        ...DIALECT_INCLUDES,
-        messages: {
-          ...DIALECT_INCLUDES.messages,
-          orderBy: {
-            timestamp: 'desc',
-          },
-          take: 50,
-        },
-      },
-      rejectOnNotFound: (e) => new NotFoundException(e),
     });
   }
 
@@ -131,7 +133,10 @@ export class DialectService {
   }
 
   async delete(publicKey: string, wallet: Wallet) {
-    const dialect = await this.find(publicKey, wallet);
+    const dialect = await this.findOneFailFast({
+      publicKey,
+      someMemberWalletId: wallet.id,
+    });
     if (
       !dialect.members.find(
         (m: WalletedMember) =>
@@ -150,16 +155,14 @@ export class DialectService {
   }
 
   async sendMessage(
-    command: SendMessageCommandDto,
-    dialectPublicKey: string,
-    wallet: Wallet,
+    text: Buffer,
+    findDialectQuery: FindDialectQuery,
+    principal: Principal,
   ): Promise<MemberedAndMessagedDialect> {
-    // TODO: Reduce includes in this query since less is needed.
-    const text = command.text;
-    const dialect = await this.find(dialectPublicKey, wallet);
-    const canWrite = this.checkWalletCanWriteTo(wallet, dialect);
-    await this.postMessage(canWrite, dialect.id, text);
-    return this.find(dialectPublicKey, wallet);
+    const dialect = await this.findOneFailFast(findDialectQuery);
+    const canWrite = this.checkWalletCanWriteTo(principal.wallet, dialect);
+    await this.saveMessage(canWrite, dialect.id, text);
+    return this.findOneFailFast(findDialectQuery);
   }
 
   private checkWalletCanWriteTo(
@@ -178,10 +181,10 @@ export class DialectService {
     return canWrite;
   }
 
-  async postMessage(
+  async saveMessage(
     member: Member,
     dialectId: string,
-    text: number[],
+    text: Buffer,
   ): Promise<Message> {
     const timestamp = new Date();
     const [message] = await this.prisma.$transaction([
@@ -189,7 +192,7 @@ export class DialectService {
         data: {
           dialectId,
           memberId: member.id,
-          text: Buffer.from(text),
+          text,
           timestamp,
         },
       }),
@@ -207,7 +210,7 @@ export class DialectService {
 
   private async getMemberWallets(members: DialectMemberDto[]) {
     const memberPublicKeys = members.map((it) => new PublicKey(it.publicKey));
-    const memberWallets = await this.walletService.upsert(...memberPublicKeys);
+    const memberWallets = await this.upsert(...memberPublicKeys);
     return _.values(
       _.merge(
         _.keyBy(members, (it) => it.publicKey),
@@ -238,5 +241,21 @@ export class DialectService {
         'Must be an admin of created dialect',
       );
     }
+  }
+
+  private async upsert(...publicKeys: PublicKey[]) {
+    return this.prisma.$transaction(
+      publicKeys.map((publicKey) =>
+        this.prisma.wallet.upsert({
+          where: {
+            publicKey: publicKey.toBase58(),
+          },
+          create: {
+            publicKey: publicKey.toBase58(),
+          },
+          update: {},
+        }),
+      ),
+    );
   }
 }
