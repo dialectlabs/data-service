@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Principal } from '../auth/authenticaiton.decorator';
+import { CreateDappCommandDto } from './dapp.controller.v1.dto';
 
 export interface FindDappQuery {
   publicKey?: string;
@@ -23,10 +24,13 @@ export class DappService {
     });
   }
 
-  async create(publicKey: string) {
+  create(command: CreateDappCommandDto) {
     return this.prisma.dapp.create({
       data: {
-        publicKey,
+        publicKey: command.publicKey,
+        name: command.name,
+        description: command.description,
+        verified: false,
       },
     });
   }
