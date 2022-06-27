@@ -15,6 +15,12 @@ import { DappAddressModule } from './dapp-address/dapp-address.module';
     ConfigModule.forRoot(),
     LoggerModule.forRoot({
       pinoHttp: {
+        serializers: {
+          req(req) {
+            req.body = req.raw.body;
+            return req;
+          },
+        },
         redact: ['req.headers.authorization', 'res.headers'],
         autoLogging: {
           ignore: (msg) => {
