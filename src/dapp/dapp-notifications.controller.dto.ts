@@ -27,3 +27,8 @@ export class BroadcastNotificationCommandDto {
   @IsString()
   message!: string;
 }
+
+export class DappResourceId {
+  @IsPublicKey()
+  readonly dappPublicKey!: string;
+}

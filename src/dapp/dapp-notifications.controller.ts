@@ -2,15 +2,15 @@ import { Body, Controller, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthenticationGuard } from '../auth/authentication.guard';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
-import { DappResourceId } from './dapp.controller.v1.dto';
 import {
   BroadcastNotificationCommandDto,
+  DappResourceId,
   MulticastNotificationCommandDto,
   UnicastNotificationCommandDto,
 } from './dapp-notifications.controller.dto';
 import { DappNotificationsService } from './dapp-notifications.service';
-import { checkPrincipalAuthorizedToUseDapp } from './dapp.service';
 import { DappAuthenticationGuard } from '../auth/dapp-authentication.guard';
+import { checkPrincipalAuthorizedToUseDapp } from '../dapp-catalog/dapp.service';
 
 @ApiTags('Dapps')
 @Controller({

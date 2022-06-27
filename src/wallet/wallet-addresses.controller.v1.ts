@@ -22,8 +22,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { VerifyAddressCommandDto } from './wallet-addresses.controller.v1.dto';
 import { AddressService } from '../address/address.service';
 
-// https://stackoverflow.com/questions/35719797/is-using-magic-me-self-resource-identifiers-going-against-rest-principles
-@ApiTags('Wallet address')
+@ApiTags('Wallet addresses')
 @ApiBearerAuth()
 @UseGuards(AuthenticationGuard)
 @Controller({

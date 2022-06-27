@@ -14,10 +14,8 @@ import {
   CreateDialectCommandDto,
   DialectMemberDto,
   MemberScopeDto,
-  SendMessageCommandDto,
 } from './dialect.controller.dto';
 import { PublicKey } from '@solana/web3.js';
-import { WalletService } from '../wallet/wallet.service';
 import { DialectAddressProvider } from './dialect-address-provider';
 import _ from 'lodash';
 import { Principal } from '../auth/authenticaiton.decorator';
@@ -33,10 +31,7 @@ export interface FindDialectQuery {
 
 @Injectable()
 export class DialectService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly walletService: WalletService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findOneFailFast(
     query: FindDialectQuery,
@@ -215,7 +210,7 @@ export class DialectService {
 
   private async getMemberWallets(members: DialectMemberDto[]) {
     const memberPublicKeys = members.map((it) => new PublicKey(it.publicKey));
-    const memberWallets = await this.walletService.upsert(...memberPublicKeys);
+    const memberWallets = await this.upsert(...memberPublicKeys);
     return _.values(
       _.merge(
         _.keyBy(members, (it) => it.publicKey),
@@ -246,5 +241,21 @@ export class DialectService {
         'Must be an admin of created dialect',
       );
     }
+  }
+
+  private async upsert(...publicKeys: PublicKey[]) {
+    return this.prisma.$transaction(
+      publicKeys.map((publicKey) =>
+        this.prisma.wallet.upsert({
+          where: {
+            publicKey: publicKey.toBase58(),
+          },
+          create: {
+            publicKey: publicKey.toBase58(),
+          },
+          update: {},
+        }),
+      ),
+    );
   }
 }

@@ -6,7 +6,6 @@ import {
 } from './dapp-notifications.controller.dto';
 import { Address, Dapp, DappAddress, Wallet } from '@prisma/client';
 import { PersistedAddressType } from '../address/address.repository';
-import { DappService } from './dapp.service';
 import { TelegramService } from '../telegram/telegram.service';
 import { MailService } from '../mail/mail.service';
 import { SmsService } from '../sms/sms.service';
@@ -17,6 +16,7 @@ import {
 } from '../dapp-address/dapp-address.service';
 import { Principal } from '../auth/authenticaiton.decorator';
 import { UnencryptedTextSerde } from '@dialectlabs/web3';
+import { DappService } from '../dapp-catalog/dapp.service';
 
 interface SendNotificationCommand {
   title: string;

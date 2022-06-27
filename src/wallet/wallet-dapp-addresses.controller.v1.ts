@@ -25,7 +25,7 @@ import { Address, Dapp, DappAddress, Wallet } from '@prisma/client';
 import { PersistedAddressType } from '../address/address.repository';
 import { DappAddressService } from '../dapp-address/dapp-address.service';
 
-@ApiTags('Wallet dapp address')
+@ApiTags('Wallet dapp addresses')
 @ApiBearerAuth()
 @UseGuards(AuthenticationGuard)
 @Controller({
