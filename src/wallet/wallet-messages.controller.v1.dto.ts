@@ -8,6 +8,6 @@ export class FindDappMessagesQueryDto {
   @IsNumber()
   @IsOptional()
   @Min(0)
-  @Max(50)
+  @Max(500)
   readonly take?: number;
 }
