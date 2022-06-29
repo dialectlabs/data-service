@@ -10,7 +10,7 @@ import {
 } from './dapp-message.controller.dto';
 import { DappMessageService } from './dapp-message.service';
 import { DappAuthenticationGuard } from '../auth/dapp-authentication.guard';
-import { checkPrincipalAuthorizedToUseDapp } from '../dapp-catalog/dapp.service';
+import { checkPrincipalAuthorizedToUseDapp } from '../dapp/dapp.service';
 
 @ApiTags('Dapps')
 @Controller({

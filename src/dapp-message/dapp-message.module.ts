@@ -8,7 +8,7 @@ import { SmsModule } from '../sms/sms.module';
 import { TelegramModule } from '../telegram/telegram.module';
 import { DappAddressModule } from '../dapp-address/dapp-address.module';
 import { DialectModule } from '../dialect/dialect.module';
-import { DappModule } from '../dapp-catalog/dapp.module';
+import { DappModule } from '../dapp/dapp.module';
 
 @Module({
   imports: [

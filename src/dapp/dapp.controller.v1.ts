@@ -52,12 +52,11 @@ export class DappControllerV1 {
   }
 
   @Get(':dappPublicKey')
-  @UseGuards(AuthenticationGuard, DappAuthenticationGuard)
+  @UseGuards(AuthenticationGuard)
   async findOne(
     @AuthPrincipal() principal: Principal,
     @Param() { dappPublicKey }: DappResourceId,
   ): Promise<DappDto> {
-    checkPrincipalAuthorizedToUseDapp(principal, dappPublicKey);
     const dapp = await this.dappService.findOne(dappPublicKey);
     return DappDto.from(dapp);
   }

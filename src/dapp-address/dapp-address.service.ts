@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DappAddress, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { FindAddressQuery } from '../address/address.service';
-import { FindDappQuery } from '../dapp-catalog/dapp.service';
+import { FindDappQuery } from '../dapp/dapp.service';
 
 export interface FindDappAddressesQuery {
   enabled?: boolean;
