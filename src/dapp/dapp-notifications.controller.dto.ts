@@ -7,7 +7,7 @@ export class UnicastNotificationCommandDto {
   @IsString()
   message!: string;
   @IsPublicKey()
-  receiverPublicKey!: string;
+  recipientPublicKey!: string;
 }
 
 export class MulticastNotificationCommandDto {
@@ -18,7 +18,7 @@ export class MulticastNotificationCommandDto {
   @IsArray()
   @ArrayNotEmpty()
   @IsPublicKey({ each: true })
-  receiverPublicKeys!: string[];
+  recipientPublicKeys!: string[];
 }
 
 export class BroadcastNotificationCommandDto {

@@ -51,7 +51,7 @@ export class DappNotificationsService {
       address: {
         verified: true,
         wallet: {
-          publicKeys: [command.receiverPublicKey],
+          publicKeys: [command.recipientPublicKey],
         },
       },
     });
@@ -71,7 +71,7 @@ export class DappNotificationsService {
       address: {
         verified: true,
         wallet: {
-          publicKeys: command.receiverPublicKeys,
+          publicKeys: command.recipientPublicKeys,
         },
       },
     });
