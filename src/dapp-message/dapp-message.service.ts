@@ -16,7 +16,7 @@ import {
 } from '../dapp-address/dapp-address.service';
 import { Principal } from '../auth/authenticaiton.decorator';
 import { UnencryptedTextSerde } from '@dialectlabs/web3';
-import { DappService } from '../dapp-catalog/dapp.service';
+import { DappService } from '../dapp/dapp.service';
 
 interface SendNotificationCommand {
   title: string;

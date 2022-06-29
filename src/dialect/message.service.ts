@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Wallet } from '@prisma/client';
-import { DappService, FindDappQuery } from '../dapp-catalog/dapp.service';
+import { DappService, FindDappQuery } from '../dapp/dapp.service';
 
 export interface FindDappMessageQuery {
   dapp: FindDappQuery;
