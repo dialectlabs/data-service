@@ -1,16 +1,16 @@
 import { ArrayNotEmpty, IsArray, IsString } from 'class-validator';
 import { IsPublicKey } from '../middleware/public-key-validation';
 
-export class UnicastNotificationCommandDto {
+export class UnicastMessageCommandDto {
   @IsString()
   title!: string;
   @IsString()
   message!: string;
   @IsPublicKey()
-  receiverPublicKey!: string;
+  recipientPublicKey!: string;
 }
 
-export class MulticastNotificationCommandDto {
+export class MulticastMessageCommandDto {
   @IsString()
   title!: string;
   @IsString()
@@ -18,10 +18,10 @@ export class MulticastNotificationCommandDto {
   @IsArray()
   @ArrayNotEmpty()
   @IsPublicKey({ each: true })
-  receiverPublicKeys!: string[];
+  recipientPublicKeys!: string[];
 }
 
-export class BroadcastNotificationCommandDto {
+export class BroadcastMessageCommandDto {
   @IsString()
   title!: string;
   @IsString()
