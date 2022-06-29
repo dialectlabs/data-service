@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
 
-import { DappNotificationsService } from './dapp-notifications.service';
-import { DappNotificationsController } from './dapp-notifications.controller';
+import { DappMessageService } from './dapp-message.service';
+import { DappMessageController } from './dapp-message.controller';
 import { MailModule } from '../mail/mail.module';
 import { SmsModule } from '../sms/sms.module';
 import { TelegramModule } from '../telegram/telegram.module';
@@ -20,8 +20,8 @@ import { DappModule } from '../dapp-catalog/dapp.module';
     DappAddressModule,
     DialectModule,
   ],
-  providers: [DappNotificationsService],
+  providers: [DappMessageService],
   exports: [],
-  controllers: [DappNotificationsController],
+  controllers: [DappMessageController],
 })
-export class DappNotificationsModule {}
+export class DappMessageModule {}

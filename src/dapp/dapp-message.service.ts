@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
-  BroadcastNotificationCommandDto,
-  MulticastNotificationCommandDto,
-  UnicastNotificationCommandDto,
-} from './dapp-notifications.controller.dto';
+  BroadcastMessageCommandDto,
+  MulticastMessageCommandDto,
+  UnicastMessageCommandDto,
+} from './dapp-message.controller.dto';
 import { Address, Dapp, DappAddress, Wallet } from '@prisma/client';
 import { PersistedAddressType } from '../address/address.repository';
 import { TelegramService } from '../telegram/telegram.service';
@@ -29,9 +29,9 @@ interface SendNotificationCommand {
 }
 
 @Injectable()
-export class DappNotificationsService {
+export class DappMessageService {
   private readonly textSerde = new UnencryptedTextSerde();
-  private readonly logger = new Logger(DappNotificationsService.name);
+  private readonly logger = new Logger(DappMessageService.name);
 
   constructor(
     private readonly dappService: DappService,
@@ -42,7 +42,7 @@ export class DappNotificationsService {
     private readonly dialect: DialectService,
   ) {}
 
-  async unicast(command: UnicastNotificationCommandDto, dapp: Principal) {
+  async unicast(command: UnicastMessageCommandDto, dapp: Principal) {
     const receivers = await this.dappAddress.findAll({
       dapp: {
         publicKey: dapp.wallet.publicKey,
@@ -62,7 +62,7 @@ export class DappNotificationsService {
     });
   }
 
-  async multicast(command: MulticastNotificationCommandDto, dapp: Principal) {
+  async multicast(command: MulticastMessageCommandDto, dapp: Principal) {
     const receivers = await this.dappAddress.findAll({
       dapp: {
         publicKey: dapp.wallet.publicKey,
@@ -82,7 +82,7 @@ export class DappNotificationsService {
     });
   }
 
-  async broadcast(command: BroadcastNotificationCommandDto, dapp: Principal) {
+  async broadcast(command: BroadcastMessageCommandDto, dapp: Principal) {
     const receivers = await this.dappAddress.findAll({
       dapp: {
         publicKey: dapp.wallet.publicKey,

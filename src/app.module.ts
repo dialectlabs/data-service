@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from './prisma/prisma.module';
 import { WalletModule } from './wallet/wallet.module';
-import { DappNotificationsModule } from './dapp/dapp-notifications.module';
+import { DappMessageModule } from './dapp/dapp-message.module';
 import { MailModule } from './mail/mail.module';
 import { SmsModule } from './sms/sms.module';
 import { TelegramModule } from './telegram/telegram.module';
@@ -43,7 +43,7 @@ import { DappAddressModule } from './dapp-address/dapp-address.module';
     }),
     PrismaModule,
     WalletModule,
-    DappNotificationsModule,
+    DappMessageModule,
     DappAddressModule,
     MailModule,
     SmsModule,

@@ -3,12 +3,12 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthenticationGuard } from '../auth/authentication.guard';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 import {
-  BroadcastNotificationCommandDto,
+  BroadcastMessageCommandDto,
   DappResourceId,
-  MulticastNotificationCommandDto,
-  UnicastNotificationCommandDto,
-} from './dapp-notifications.controller.dto';
-import { DappNotificationsService } from './dapp-notifications.service';
+  MulticastMessageCommandDto,
+  UnicastMessageCommandDto,
+} from './dapp-message.controller.dto';
+import { DappMessageService } from './dapp-message.service';
 import { DappAuthenticationGuard } from '../auth/dapp-authentication.guard';
 import { checkPrincipalAuthorizedToUseDapp } from '../dapp-catalog/dapp.service';
 
@@ -19,38 +19,36 @@ import { checkPrincipalAuthorizedToUseDapp } from '../dapp-catalog/dapp.service'
 })
 @UseGuards(AuthenticationGuard, DappAuthenticationGuard)
 @ApiBearerAuth()
-export class DappNotificationsController {
-  constructor(
-    private readonly dappNotificationsService: DappNotificationsService,
-  ) {}
+export class DappMessageController {
+  constructor(private readonly dappMessageService: DappMessageService) {}
 
-  @Post(':dappPublicKey/notifications/unicast')
+  @Post(':dappPublicKey/messages/unicast')
   async unicast(
     @AuthPrincipal() principal: Principal,
     @Param() { dappPublicKey }: DappResourceId,
-    @Body() command: UnicastNotificationCommandDto,
+    @Body() command: UnicastMessageCommandDto,
   ) {
     checkPrincipalAuthorizedToUseDapp(principal, dappPublicKey);
-    await this.dappNotificationsService.unicast(command, principal);
+    await this.dappMessageService.unicast(command, principal);
   }
 
-  @Post(':dappPublicKey/notifications/multicast')
+  @Post(':dappPublicKey/messages/multicast')
   async multicast(
     @AuthPrincipal() principal: Principal,
     @Param() { dappPublicKey }: DappResourceId,
-    @Body() command: MulticastNotificationCommandDto,
+    @Body() command: MulticastMessageCommandDto,
   ) {
     checkPrincipalAuthorizedToUseDapp(principal, dappPublicKey);
-    await this.dappNotificationsService.multicast(command, principal);
+    await this.dappMessageService.multicast(command, principal);
   }
 
-  @Post(':dappPublicKey/notifications/broadcast')
+  @Post(':dappPublicKey/messages/broadcast')
   async broadcast(
     @AuthPrincipal() principal: Principal,
     @Param() { dappPublicKey }: DappResourceId,
-    @Body() command: BroadcastNotificationCommandDto,
+    @Body() command: BroadcastMessageCommandDto,
   ) {
     checkPrincipalAuthorizedToUseDapp(principal, dappPublicKey);
-    await this.dappNotificationsService.broadcast(command, principal);
+    await this.dappMessageService.broadcast(command, principal);
   }
 }
