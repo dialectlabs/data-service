@@ -1,10 +1,4 @@
-import {
-  IsBoolean,
-  IsIn,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsBoolean, IsIn, IsNotEmpty, IsOptional } from 'class-validator';
 
 // Addresses
 
@@ -36,7 +30,7 @@ export class PutDappAddressDto {
       - enabled
     */
   readonly addressId!: string;
-  @IsString() // TODO: Support custom constraint https://stackoverflow.com/a/53786899/2322073
+  // Switch to wallets api v1, @IsString() validation is removed to fix serde issue from https://github.com/dialectlabs/react/commit/9f87c0b0f398c3a7445ee49aeab2cbd5b6799141#diff-3cbf26f557fe89acc9b185b50a40e3dd7c54feafbfe7e1cd8f3bafd35a870b08R60
   @IsOptional()
   readonly value!: string;
   @IsNotEmpty()
