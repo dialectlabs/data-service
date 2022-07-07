@@ -1,6 +1,7 @@
 // TODO: Enforce UUID format in some kind of middleware exception handling.
 // Consolidate exception handling into single wrapper
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -13,21 +14,18 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { PrismaService } from '../prisma/prisma.service';
-import {
-  DappAddressDto,
-  PostDappAddressDto,
-  PutDappAddressDto,
-  VerifyAddressDto,
-} from './wallet.controller.v0.dto';
-import { AuthenticationGuard } from '../auth/authentication.guard';
-import { MailService } from '../mail/mail.service';
-import { generateVerificationCode } from 'src/utils';
-import { SmsService } from 'src/sms/sms.service';
-import { PublicKeyValidationPipe } from '../middleware/public-key-validation';
-import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
-import { IllegalStateError } from '@dialectlabs/sdk';
+import {ApiBearerAuth, ApiOperation, ApiTags} from '@nestjs/swagger';
+import {PrismaService} from '../prisma/prisma.service';
+import {DappAddressDto, PostDappAddressDto, PutDappAddressDto, VerifyAddressDto,} from './wallet.controller.v0.dto';
+import {AuthenticationGuard} from '../auth/authentication.guard';
+import {MailService} from '../mail/mail.service';
+import {generateVerificationCode} from 'src/utils';
+import {SmsService} from 'src/sms/sms.service';
+import {PublicKeyValidationPipe} from '../middleware/public-key-validation';
+import {AuthPrincipal, Principal} from '../auth/authenticaiton.decorator';
+import {IllegalStateError} from '@dialectlabs/sdk';
+import {PublicKey} from '@solana/web3.js';
+import {BN} from 'bn.js';
 
 @ApiTags('Wallets')
 @Controller({
@@ -161,7 +159,7 @@ export class WalletControllerV0 {
 
     const addressId = postDappAddressDto.addressId;
     const type = postDappAddressDto.type;
-    const value = postDappAddressDto.value;
+    const value = WalletControllerV0.getValue(type, postDappAddressDto);
     const enabled = postDappAddressDto.enabled;
     let address;
     if (!addressId && type && value) {
@@ -331,6 +329,27 @@ export class WalletControllerV0 {
       enabled: dappAddress.enabled,
       value: dappAddress.address.value,
     };
+  }
+
+  private static getValue(type: string, postDappAddressDto: PutDappAddressDto) {
+    const value = postDappAddressDto.value;
+    console.log(value);
+    if (type !== 'wallet') {
+      return value;
+    }
+    try {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      const bn = value['_bn'];
+      if (bn && typeof bn === 'string') {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        return new PublicKey(new BN(value._bn, 'hex')).toBase58();
+      }
+      return new PublicKey(value).toBase58();
+    } catch (e) {
+      throw new BadRequestException(`${value} is invalid public key`);
+    }
   }
 
   /**
