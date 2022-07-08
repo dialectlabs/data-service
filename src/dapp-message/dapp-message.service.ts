@@ -102,21 +102,22 @@ export class DappMessageService {
   async send(command: SendMessageCommand) {
     const title = command.title;
     const message = command.message;
-    const titleWithDappName = `${command.dappPrincipal.dapp.name}: ${title}`;
-    const messageWithTitle = `${titleWithDappName}\n${command.message}`;
+    const dappNameAndTitle = `${command.dappPrincipal.dapp.name}: ${title}`;
     const allSettled = Promise.allSettled(
       command.receivers.map(async (da) => {
         switch (da.address.type as PersistedAddressType) {
           case 'telegram':
             const telegramChatId = extractTelegramChatId(da);
+            const telegramMarkDown2Message = `*${dappNameAndTitle}*\n${command.message}`;
             return (
               telegramChatId &&
-              this.telegram.send(telegramChatId, messageWithTitle)
+              this.telegram.send(telegramChatId, telegramMarkDown2Message)
             );
           case 'email':
-            return this.mail.send(da.address.value, titleWithDappName, message);
+            return this.mail.send(da.address.value, dappNameAndTitle, message);
           case 'sms':
-            return this.sms.send(da.address.value, messageWithTitle);
+            const smsMessage = `${dappNameAndTitle}\n${command.message}`;
+            return this.sms.send(da.address.value, smsMessage);
           case 'wallet':
             return this.dialect.sendMessage(
               Buffer.from(this.textSerde.serialize(command.message)),

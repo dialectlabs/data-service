@@ -37,7 +37,9 @@ export class TelefrafTelegramService extends TelegramService {
 
   async send(telegramId: string, body: string) {
     try {
-      const res = this.bot.telegram.sendMessage(telegramId, body);
+      const res = this.bot.telegram.sendMessage(telegramId, body, {
+        parse_mode: 'MarkdownV2',
+      });
       this.logger.log(`Telegram message sent to ${res}`);
     } catch (e: any) {
       this.logger.error('Error sending Telegram message:', e);
