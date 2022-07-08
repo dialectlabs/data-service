@@ -33,7 +33,6 @@ export class DappMessageController {
     @Param() { dappPublicKey }: DappResourceId,
     @Body() command: UnicastMessageCommandDto,
   ) {
-    console.log('aa' + JSON.stringify(principal));
     checkPrincipalAuthorizedToUseDapp(principal, dappPublicKey);
     await this.dappMessageService.unicast(command, principal);
   }

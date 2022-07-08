@@ -89,8 +89,8 @@ export class TelefrafTelegramService extends TelegramService {
     );
   }
 
-  private async findDappAddresses(address: Address) {
-    return await this.prisma.dappAddress.findMany({
+  private findDappAddresses(address: Address) {
+    return this.prisma.dappAddress.findMany({
       where: {
         addressId: address.id,
       },
