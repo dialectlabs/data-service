@@ -63,20 +63,7 @@ export class TelefrafTelegramService extends TelegramService {
       );
       return;
     }
-
-    const dapps = await this.findDappsAssociatedWith(ctx.botInfo.id);
-    if (dapps.length === 0) {
-      await ctx.reply('Dapps associated with this bot not found.');
-      return;
-    }
-
-    const dappIds = dapps.map((dapp) => dapp.id);
-    const dappAddresses = await this.prisma.dappAddress.findMany({
-      where: {
-        addressId: addressToBeVerified.id,
-        dappId: { in: dappIds },
-      },
-    });
+    const dappAddresses = await this.findDappAddresses(addressToBeVerified);
     if (dappAddresses.length === 0) {
       await ctx.reply('Your username is not associated with any Dapp.');
       return;
@@ -102,6 +89,14 @@ export class TelefrafTelegramService extends TelegramService {
     );
   }
 
+  private async findDappAddresses(address: Address) {
+    return await this.prisma.dappAddress.findMany({
+      where: {
+        addressId: address.id,
+      },
+    });
+  }
+
   private findAllUserAddresses(username: string) {
     return this.prisma.address.findMany({
       orderBy: [{ updatedAt: 'desc' }],
@@ -116,15 +111,5 @@ export class TelefrafTelegramService extends TelegramService {
     addresses: Address[],
   ): Address | undefined {
     return addresses.filter(({ verified }) => !verified)[0];
-  }
-
-  private findDappsAssociatedWith(botId: any) {
-    return this.prisma.dapp.findMany({
-      where: {
-        telegramKey: {
-          contains: `${botId.toString()}:`,
-        },
-      },
-    });
   }
 }
