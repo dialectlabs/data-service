@@ -1,7 +1,12 @@
 import { Body, Controller, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthenticationGuard } from '../auth/authentication.guard';
-import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
+import {
+  DappPrincipal,
+  AuthPrincipal,
+  Principal,
+  DappAuthPrincipal,
+} from '../auth/authenticaiton.decorator';
 import {
   BroadcastMessageCommandDto,
   DappResourceId,
@@ -24,7 +29,7 @@ export class DappMessageController {
 
   @Post(':dappPublicKey/messages/unicast')
   async unicast(
-    @AuthPrincipal() principal: Principal,
+    @DappAuthPrincipal() principal: DappPrincipal,
     @Param() { dappPublicKey }: DappResourceId,
     @Body() command: UnicastMessageCommandDto,
   ) {
@@ -34,7 +39,7 @@ export class DappMessageController {
 
   @Post(':dappPublicKey/messages/multicast')
   async multicast(
-    @AuthPrincipal() principal: Principal,
+    @DappAuthPrincipal() principal: DappPrincipal,
     @Param() { dappPublicKey }: DappResourceId,
     @Body() command: MulticastMessageCommandDto,
   ) {
@@ -44,7 +49,7 @@ export class DappMessageController {
 
   @Post(':dappPublicKey/messages/broadcast')
   async broadcast(
-    @AuthPrincipal() principal: Principal,
+    @DappAuthPrincipal() principal: DappPrincipal,
     @Param() { dappPublicKey }: DappResourceId,
     @Body() command: BroadcastMessageCommandDto,
   ) {

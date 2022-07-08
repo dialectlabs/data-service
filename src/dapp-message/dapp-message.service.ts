@@ -14,18 +14,18 @@ import {
   DappAddressService,
   extractTelegramChatId,
 } from '../dapp-address/dapp-address.service';
-import { Principal } from '../auth/authenticaiton.decorator';
+import { DappPrincipal } from '../auth/authenticaiton.decorator';
 import { UnencryptedTextSerde } from '@dialectlabs/web3';
 import { DappService } from '../dapp/dapp.service';
 
-interface SendNotificationCommand {
+interface SendMessageCommand {
   title: string;
   message: string;
   receivers: (DappAddress & {
     dapp: Dapp;
     address: Address & { wallet: Wallet };
   })[];
-  dapp: Principal;
+  dappPrincipal: DappPrincipal;
 }
 
 @Injectable()
@@ -42,7 +42,7 @@ export class DappMessageService {
     private readonly dialect: DialectService,
   ) {}
 
-  async unicast(command: UnicastMessageCommandDto, dapp: Principal) {
+  async unicast(command: UnicastMessageCommandDto, dapp: DappPrincipal) {
     const receivers = await this.dappAddress.findAll({
       dapp: {
         publicKey: dapp.wallet.publicKey,
@@ -57,12 +57,12 @@ export class DappMessageService {
     });
     return this.send({
       ...command,
-      dapp: dapp,
+      dappPrincipal: dapp,
       receivers,
     });
   }
 
-  async multicast(command: MulticastMessageCommandDto, dapp: Principal) {
+  async multicast(command: MulticastMessageCommandDto, dapp: DappPrincipal) {
     const receivers = await this.dappAddress.findAll({
       dapp: {
         publicKey: dapp.wallet.publicKey,
@@ -77,12 +77,12 @@ export class DappMessageService {
     });
     return this.send({
       ...command,
-      dapp,
+      dappPrincipal: dapp,
       receivers,
     });
   }
 
-  async broadcast(command: BroadcastMessageCommandDto, dapp: Principal) {
+  async broadcast(command: BroadcastMessageCommandDto, dapp: DappPrincipal) {
     const receivers = await this.dappAddress.findAll({
       dapp: {
         publicKey: dapp.wallet.publicKey,
@@ -94,37 +94,40 @@ export class DappMessageService {
     });
     return this.send({
       ...command,
-      dapp,
+      dappPrincipal: dapp,
       receivers,
     });
   }
 
-  async send(command: SendNotificationCommand) {
+  async send(command: SendMessageCommand) {
     const title = command.title;
     const message = command.message;
+    const dappNameAndTitle = `${command.dappPrincipal.dapp.name}: ${title}`;
     const allSettled = Promise.allSettled(
       command.receivers.map(async (da) => {
         switch (da.address.type as PersistedAddressType) {
           case 'telegram':
             const telegramChatId = extractTelegramChatId(da);
             return (
-              telegramChatId && this.telegram.send(telegramChatId, message)
+              telegramChatId &&
+              this.telegram.send(telegramChatId, dappNameAndTitle, message)
             );
           case 'email':
-            return this.mail.send(da.address.value, title, message);
+            return this.mail.send(da.address.value, dappNameAndTitle, message);
           case 'sms':
-            return this.sms.send(da.address.value, message);
+            const smsMessage = `${dappNameAndTitle}\n${command.message}`;
+            return this.sms.send(da.address.value, smsMessage);
           case 'wallet':
             return this.dialect.sendMessage(
               Buffer.from(this.textSerde.serialize(command.message)),
               {
                 encrypted: false,
                 memberWalletPublicKeys: [
-                  command.dapp.wallet.publicKey,
+                  command.dappPrincipal.wallet.publicKey,
                   da.address.wallet.publicKey,
                 ],
               },
-              command.dapp,
+              command.dappPrincipal,
             );
         }
       }),
