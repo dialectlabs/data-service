@@ -108,10 +108,9 @@ export class DappMessageService {
         switch (da.address.type as PersistedAddressType) {
           case 'telegram':
             const telegramChatId = extractTelegramChatId(da);
-            const telegramMarkDown2Message = `*${dappNameAndTitle}*\n${command.message}`;
             return (
               telegramChatId &&
-              this.telegram.send(telegramChatId, telegramMarkDown2Message)
+              this.telegram.send(telegramChatId, dappNameAndTitle, message)
             );
           case 'email':
             return this.mail.send(da.address.value, dappNameAndTitle, message);

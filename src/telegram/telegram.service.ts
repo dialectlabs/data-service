@@ -5,7 +5,7 @@ import { Address } from '@prisma/client';
 import { Telegraf } from 'telegraf';
 
 export abstract class TelegramService {
-  abstract send(telegramId: string, body: string): Promise<void>;
+  abstract send(telegramId: string, title: string, body: string): Promise<void>;
 }
 
 export class NoopTelegramService extends TelegramService {
@@ -18,8 +18,8 @@ export class NoopTelegramService extends TelegramService {
     );
   }
 
-  send(telegramId: string, body: string): Promise<void> {
-    this.logger.log(`Sending ${body} to ${telegramId}`);
+  send(telegramId: string, title: string, body: string): Promise<void> {
+    this.logger.log(`Sending ${title}\n${body} to ${telegramId}`);
     return Promise.resolve();
   }
 }
@@ -35,9 +35,12 @@ export class TelefrafTelegramService extends TelegramService {
     super();
   }
 
-  async send(telegramId: string, body: string) {
+  async send(telegramId: string, title: string, body: string) {
+    const titleEscaped = escapeMarkdownMetaCharacters(title);
+    const bodyEscaped = escapeMarkdownMetaCharacters(body);
+    const text = `*${titleEscaped}*\n${bodyEscaped}`;
     try {
-      const res = this.bot.telegram.sendMessage(telegramId, body, {
+      const res = this.bot.telegram.sendMessage(telegramId, text, {
         parse_mode: 'MarkdownV2',
       });
       this.logger.log(`Telegram message sent to ${res}`);
@@ -114,4 +117,8 @@ export class TelefrafTelegramService extends TelegramService {
   ): Address | undefined {
     return addresses.filter(({ verified }) => !verified)[0];
   }
+}
+
+export function escapeMarkdownMetaCharacters(text: string) {
+  return text.replace(/[._~`<>#\-=!*+?^${}()|[\]\\]/g, '\\$&');
 }
