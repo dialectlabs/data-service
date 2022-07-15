@@ -15,7 +15,6 @@ export class PrismaExceptionInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
       catchError((e) => {
-        console.log(JSON.stringify(e, null, 2));
         if (
           e instanceof PrismaClientKnownRequestError &&
           e.code === PrismaError.UniqueConstraintViolation
