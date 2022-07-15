@@ -103,6 +103,7 @@ model NotificationType {
   notificationSubscriptions NotificationSubscription[]
 
   @@unique([dappId, code])
+  @@unique([dappId, id])
   @@map("notification_types")
 }
 

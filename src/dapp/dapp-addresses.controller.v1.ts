@@ -1,7 +1,10 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthenticationGuard } from '../auth/authentication.guard';
-import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
+import {
+  DappAuthPrincipal,
+  DappPrincipal,
+} from '../auth/authenticaiton.decorator';
 import { DappAddressDto } from '../dapp-address/dapp-address.controller.dto';
 import { DappResourceId } from './dapp.controller.dto';
 import { checkPrincipalAuthorizedToUseDapp } from './dapp.service';
@@ -14,13 +17,13 @@ import { DappAuthenticationGuard } from '../auth/dapp-authentication.guard';
   version: '1',
 })
 @ApiBearerAuth()
+@UseGuards(AuthenticationGuard, DappAuthenticationGuard)
 export class DappAddressesControllerV1 {
   constructor(private readonly dappAddressService: DappAddressService) {}
 
   @Get(':dappPublicKey/dappAddresses')
-  @UseGuards(AuthenticationGuard, DappAuthenticationGuard)
   async findAllDappAddresses(
-    @AuthPrincipal() principal: Principal,
+    @DappAuthPrincipal() principal: DappPrincipal,
     @Param() { dappPublicKey }: DappResourceId,
   ): Promise<DappAddressDto[]> {
     checkPrincipalAuthorizedToUseDapp(principal, dappPublicKey);

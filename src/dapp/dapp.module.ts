@@ -9,6 +9,7 @@ import { SmsModule } from '../sms/sms.module';
 import { TelegramModule } from '../telegram/telegram.module';
 import { DappAddressModule } from '../dapp-address/dapp-address.module';
 import { DappAddressesControllerV1 } from './dapp-addresses.controller.v1';
+import { DappNotificationTypesController } from './dapp-notification-types.controller';
 
 @Module({
   imports: [
@@ -22,8 +23,9 @@ import { DappAddressesControllerV1 } from './dapp-addresses.controller.v1';
   exports: [DappService],
   controllers: [
     DappAddressesControllerV0,
-    DappController,
     DappAddressesControllerV1,
+    DappController,
+    DappNotificationTypesController,
   ],
 })
 export class DappModule {}
