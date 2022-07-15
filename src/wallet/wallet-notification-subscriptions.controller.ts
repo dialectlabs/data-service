@@ -6,8 +6,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   FindNotificationSubscriptionQueryDto,
   UpsertNotificationSubscriptionCommandDto,
+  WalletNotificationSubscriptionDto,
 } from './wallet-notification-subscription.controller.dto';
-import { NotificationSubscriptionDto } from '../notification/notification.dto';
 
 @ApiTags('Wallet notification subscriptions')
 @ApiBearerAuth()
@@ -23,7 +23,7 @@ export class WalletNotificationSubscriptionsController {
   async findAll(
     @AuthPrincipal() { wallet }: Principal,
     @Query() query: FindNotificationSubscriptionQueryDto,
-  ): Promise<NotificationSubscriptionDto[]> {
+  ): Promise<WalletNotificationSubscriptionDto[]> {
     const notificationTypes = await this.prisma.notificationType.findMany({
       where: {
         dapp: {
@@ -50,7 +50,7 @@ export class WalletNotificationSubscriptionsController {
           notificationTypeIdToNotificationSubscription[notificationType.id],
       }))
       .map(({ notificationType, notificationSubscription }) =>
-        NotificationSubscriptionDto.from(
+        WalletNotificationSubscriptionDto.from(
           wallet,
           notificationType,
           notificationSubscription,
@@ -62,7 +62,7 @@ export class WalletNotificationSubscriptionsController {
   async upsert(
     @AuthPrincipal() { wallet }: Principal,
     @Query() command: UpsertNotificationSubscriptionCommandDto,
-  ): Promise<NotificationSubscriptionDto> {
+  ): Promise<WalletNotificationSubscriptionDto> {
     const updated = await this.prisma.notificationSubscription.upsert({
       where: {
         walletId_notificationTypeId: {
@@ -82,7 +82,7 @@ export class WalletNotificationSubscriptionsController {
         notificationType: true,
       },
     });
-    return NotificationSubscriptionDto.from(
+    return WalletNotificationSubscriptionDto.from(
       wallet,
       updated.notificationType,
       updated,

@@ -1,14 +1,6 @@
-import {
-  NotificationSubscription,
-  NotificationType,
-  Wallet,
-} from '@prisma/client';
+import { NotificationType } from '@prisma/client';
 import { IsBoolean } from 'class-validator';
 import { WalletDto } from '../wallet/wallet.controller.v1.dto';
-
-export interface ConfigSource {
-  enabled: boolean;
-}
 
 export class NotificationTypeDto {
   id!: string;
@@ -36,7 +28,7 @@ export class NotificationConfigDto {
   @IsBoolean()
   enabled!: boolean;
 
-  static from(configSource: ConfigSource) {
+  static from(configSource: NotificationConfigSource) {
     return {
       enabled: configSource.enabled,
     };
@@ -45,28 +37,16 @@ export class NotificationConfigDto {
 
 export class NotificationSubscriptionDto {
   wallet!: WalletDto;
-  notificationType!: NotificationTypeDto;
   config!: NotificationConfigDto;
+}
 
-  static from(
-    wallet: Wallet,
-    notificationType: NotificationType,
-    notificationSubscription?: NotificationSubscription,
-  ): NotificationSubscriptionDto {
-    return {
-      wallet: WalletDto.from(wallet),
-      notificationType: NotificationTypeDto.from(notificationType),
-      config: NotificationSubscriptionDto.resolveConfig(
-        notificationType,
-        notificationSubscription,
-      ),
-    };
-  }
+export interface NotificationConfigSource {
+  enabled: boolean;
+}
 
-  static resolveConfig(
-    defaultConfig: ConfigSource,
-    subscriptionConfig?: ConfigSource,
-  ): ConfigSource {
-    return subscriptionConfig ?? defaultConfig;
-  }
+export function resolveNotificationSubscriptionConfig(
+  defaultConfig: NotificationConfigSource,
+  subscriptionConfig?: NotificationConfigSource,
+): NotificationConfigSource {
+  return subscriptionConfig ?? defaultConfig;
 }
