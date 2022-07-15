@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Principal } from '../auth/authenticaiton.decorator';
-import { CreateDappCommandDto } from './dapp.controller.v1.dto';
+import { CreateDappCommandDto } from './dapp.controller.dto';
 
 export interface FindDappQuery {
   publicKey?: string;
