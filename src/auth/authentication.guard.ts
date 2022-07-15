@@ -70,11 +70,8 @@ export class AuthenticationGuard implements CanActivate {
 
   private validateTokenV2(authToken: string) {
     const token = this.parseTokenV2(authToken);
-    if (!Auth.tokens.isSignatureValid(token)) {
-      throw new UnauthorizedException('Signature verification failed');
-    }
-    if (Auth.tokens.isExpired(token)) {
-      throw new UnauthorizedException('Token expired');
+    if (!Auth.tokens.isValid(token)) {
+      throw new UnauthorizedException('JWT token not valid');
     }
     const publicKey = requireValidPublicKey(token.body.sub);
     return this.upsertWallet(publicKey);
