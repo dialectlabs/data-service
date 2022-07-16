@@ -5,6 +5,7 @@ import { NotificationType as NotificationTypeDb } from '@prisma/client';
 export interface FindNotificationSubscriptionQuery {
   walletIds: string[];
   dappPublicKey?: string;
+  notificationTypeId?: string;
 }
 
 export interface UpsertNotificationSubscriptionCommand {
@@ -47,6 +48,9 @@ export class NotificationsSubscriptionsService {
   ): Promise<NotificationSubscription[]> {
     const notificationTypes = await this.prisma.notificationType.findMany({
       where: {
+        ...(query.notificationTypeId && {
+          id: query.notificationTypeId,
+        }),
         ...(query.dappPublicKey && {
           dapp: {
             publicKey: query.dappPublicKey,
@@ -79,8 +83,8 @@ export class NotificationsSubscriptionsService {
         ]),
       );
 
-    return notificationTypes.flatMap((notificationTypeDb) => {
-      return query.walletIds.map((walletId) => {
+    return notificationTypes.flatMap((notificationTypeDb) =>
+      query.walletIds.map((walletId) => {
         const notificationType = fromNotificationTypeDb(notificationTypeDb);
         const notificationSubscription =
           notificationTypeIdWalletIdToNotificationSubscription[
@@ -93,8 +97,8 @@ export class NotificationsSubscriptionsService {
             ? toConfig(notificationSubscription)
             : notificationType.defaultConfig,
         };
-      });
-    });
+      }),
+    );
   }
 
   async upsert(

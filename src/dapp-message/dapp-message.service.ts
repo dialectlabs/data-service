@@ -4,7 +4,7 @@ import {
   MulticastMessageCommandDto,
   UnicastMessageCommandDto,
 } from './dapp-message.controller.dto';
-import { Address, Dapp, DappAddress, Prisma, Wallet } from '@prisma/client';
+import { Address, Dapp, DappAddress, Wallet } from '@prisma/client';
 import { PersistedAddressType } from '../address/address.repository';
 import { TelegramService } from '../telegram/telegram.service';
 import { MailService } from '../mail/mail.service';
@@ -17,7 +17,10 @@ import {
 import { DappPrincipal } from '../auth/authenticaiton.decorator';
 import { UnencryptedTextSerde } from '@dialectlabs/web3';
 import { DappService } from '../dapp/dapp.service';
-import { PrismaService } from '../prisma/prisma.service';
+import {
+  NotificationsSubscriptionsService,
+  NotificationSubscription,
+} from '../notification/notifications-subscriptions.service';
 
 interface SendMessageCommand {
   title: string;
@@ -36,13 +39,13 @@ export class DappMessageService {
   private readonly logger = new Logger(DappMessageService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
     private readonly dappService: DappService,
     private readonly dappAddress: DappAddressService,
     private readonly telegram: TelegramService,
     private readonly mail: MailService,
     private readonly sms: SmsService,
     private readonly dialect: DialectService,
+    private readonly notificationsSubscriptionsService: NotificationsSubscriptionsService,
   ) {}
 
   async unicast(command: UnicastMessageCommandDto, dapp: DappPrincipal) {
@@ -103,20 +106,7 @@ export class DappMessageService {
   }
 
   async send(command: SendMessageCommand) {
-    const dappNotificationTypes = await this.prisma.notificationType.findMany({
-      where: {
-        dappId: command.dappPrincipal.dapp.id,
-      },
-    });
-    if (dappNotificationTypes.length > 0) {
-      this.prisma.notificationSubscription.findMany({
-        where: {
-          notificationTypeId: command.notificationTypeId,
-        },
-      });
-      // TODO extract shit
-      command.receivers;
-    }
+    await this.getReceivers(command);
     command.receivers;
     const title = command.title;
     const message = command.message;
@@ -167,4 +157,31 @@ export class DappMessageService {
     });
     return allSettled;
   }
+
+  private async getReceivers(command: SendMessageCommand) {
+    const notificationSubscriptions =
+      await this.notificationsSubscriptionsService.findAll({
+        notificationTypeId: command.notificationTypeId,
+        dappPublicKey: command.dappPrincipal.dapp.publicKey,
+        walletIds: command.receivers.map((it) => it.address.wallet.id),
+      });
+    if (dappHasNoNotificationTypesInDb(notificationSubscriptions)) {
+      return command.receivers;
+    }
+    return command.receivers.filter(({ address: { wallet } }) =>
+      notificationSubscriptions.find(
+        (it) =>
+          it.walletId === wallet.id &&
+          it.notificationType.id === command.notificationTypeId &&
+          it.config.enabled,
+      ),
+    );
+  }
+}
+
+// backward compatibility for old dapps
+function dappHasNoNotificationTypesInDb(
+  notificationSubscriptions: NotificationSubscription[],
+) {
+  return notificationSubscriptions.length === 0;
 }

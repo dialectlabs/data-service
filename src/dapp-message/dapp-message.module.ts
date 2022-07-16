@@ -9,6 +9,7 @@ import { TelegramModule } from '../telegram/telegram.module';
 import { DappAddressModule } from '../dapp-address/dapp-address.module';
 import { DialectModule } from '../dialect/dialect.module';
 import { DappModule } from '../dapp/dapp.module';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { DappModule } from '../dapp/dapp.module';
     DappModule,
     DappAddressModule,
     DialectModule,
+    NotificationModule,
   ],
   providers: [DappMessageService],
   exports: [],
