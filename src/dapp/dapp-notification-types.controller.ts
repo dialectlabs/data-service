@@ -115,7 +115,7 @@ export class DappNotificationTypesController {
         ...(command.orderingPriority && {
           orderingPriority: command.orderingPriority,
         }),
-        ...(command?.defaultConfig?.enabled && {
+        ...(command?.defaultConfig?.enabled !== undefined && {
           enabled: command.defaultConfig.enabled,
         }),
         ...(command.tags && {
