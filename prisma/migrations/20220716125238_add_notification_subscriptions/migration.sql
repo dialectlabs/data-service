@@ -1,9 +1,10 @@
 -- CreateTable
 CREATE TABLE "notification_types" (
     "id" UUID NOT NULL,
+    "human_readable_id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "code" TEXT NOT NULL,
-    "description" TEXT NOT NULL,
+    "trigger" TEXT,
+    "ordering_priority" INTEGER,
     "tags" TEXT[],
     "enabled" BOOLEAN NOT NULL DEFAULT true,
     "dapp_id" UUID NOT NULL,
@@ -26,7 +27,10 @@ CREATE TABLE "notification_subscriptions" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "notification_types_dapp_id_code_key" ON "notification_types"("dapp_id", "code");
+CREATE UNIQUE INDEX "notification_types_dapp_id_human_readable_id_key" ON "notification_types"("dapp_id", "human_readable_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "notification_types_dapp_id_id_key" ON "notification_types"("dapp_id", "id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "notification_subscriptions_wallet_id_notification_type_id_key" ON "notification_subscriptions"("wallet_id", "notification_type_id");

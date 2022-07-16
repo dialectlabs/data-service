@@ -2,12 +2,12 @@ import { Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 import { AuthenticationGuard } from '../auth/authentication.guard';
-import { PrismaService } from '../prisma/prisma.service';
 import {
   FindNotificationSubscriptionQueryDto,
   UpsertNotificationSubscriptionCommandDto,
   WalletNotificationSubscriptionDto,
 } from './wallet-notification-subscription.controller.dto';
+import { NotificationsSubscriptionsService } from '../notification/notifications-subscriptions.service';
 
 @ApiTags('Wallet notification subscriptions')
 @ApiBearerAuth()
@@ -17,45 +17,22 @@ import {
   version: '1',
 })
 export class WalletNotificationSubscriptionsController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly notificationsSubscriptionsService: NotificationsSubscriptionsService,
+  ) {}
 
   @Get('/notificationSubscriptions')
   async findAll(
     @AuthPrincipal() { wallet }: Principal,
     @Query() query: FindNotificationSubscriptionQueryDto,
   ): Promise<WalletNotificationSubscriptionDto[]> {
-    const notificationTypes = await this.prisma.notificationType.findMany({
-      where: {
-        dapp: {
-          publicKey: query.dappPublicKey,
-        },
-      },
+    const subscriptions = await this.notificationsSubscriptionsService.findAll({
+      walletIds: [wallet.id],
+      dappPublicKey: query.dappPublicKey,
     });
-    const notificationSubscriptions =
-      await this.prisma.notificationSubscription.findMany({
-        where: {
-          walletId: wallet.id,
-          notificationTypeId: {
-            in: notificationTypes.map(({ id }) => id),
-          },
-        },
-      });
-    const notificationTypeIdToNotificationSubscription = Object.fromEntries(
-      notificationSubscriptions.map((it) => [it.notificationTypeId, it]),
+    return subscriptions.map((it) =>
+      WalletNotificationSubscriptionDto.from(wallet, it),
     );
-    return notificationTypes
-      .map((notificationType) => ({
-        notificationType,
-        notificationSubscription:
-          notificationTypeIdToNotificationSubscription[notificationType.id],
-      }))
-      .map(({ notificationType, notificationSubscription }) =>
-        WalletNotificationSubscriptionDto.from(
-          wallet,
-          notificationType,
-          notificationSubscription,
-        ),
-      );
   }
 
   @Post('/notificationSubscriptions')
@@ -63,29 +40,13 @@ export class WalletNotificationSubscriptionsController {
     @AuthPrincipal() { wallet }: Principal,
     @Query() command: UpsertNotificationSubscriptionCommandDto,
   ): Promise<WalletNotificationSubscriptionDto> {
-    const updated = await this.prisma.notificationSubscription.upsert({
-      where: {
-        walletId_notificationTypeId: {
-          walletId: wallet.id,
-          notificationTypeId: command.notificationTypeId,
-        },
-      },
-      create: {
-        walletId: wallet.id,
-        notificationTypeId: command.notificationTypeId,
+    const updated = await this.notificationsSubscriptionsService.upsert({
+      walletId: wallet.id,
+      config: {
         enabled: command.config.enabled,
       },
-      update: {
-        enabled: command.config.enabled,
-      },
-      include: {
-        notificationType: true,
-      },
+      notificationTypeId: command.notificationTypeId,
     });
-    return WalletNotificationSubscriptionDto.from(
-      wallet,
-      updated.notificationType,
-      updated,
-    );
+    return WalletNotificationSubscriptionDto.from(wallet, updated);
   }
 }

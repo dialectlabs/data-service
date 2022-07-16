@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
@@ -16,12 +17,15 @@ export class PatchNotificationTypeCommandDto {
   @IsOptional()
   @IsString()
   name?: string;
-  @IsOptional()
   @IsString()
-  code?: string;
   @IsOptional()
+  humanReadableId?: string;
   @IsString()
-  description?: string;
+  @IsOptional()
+  trigger?: string;
+  @IsNumber()
+  @IsOptional()
+  orderingPriority?: number;
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
@@ -35,9 +39,13 @@ export class CreateNotificationTypeCommandDto {
   @IsString()
   name!: string;
   @IsString()
-  code!: string;
+  humanReadableId!: string;
   @IsString()
-  description!: string;
+  @IsOptional()
+  trigger?: string;
+  @IsNumber()
+  @IsOptional()
+  orderingPriority?: number;
   @IsOptional()
   @IsArray()
   @IsString({ each: true })

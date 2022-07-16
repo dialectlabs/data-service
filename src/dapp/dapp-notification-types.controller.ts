@@ -47,7 +47,7 @@ export class DappNotificationTypesController {
         dappId: principal.dapp.id,
       },
     });
-    return notificationTypes.map(NotificationTypeDto.from);
+    return notificationTypes.map(NotificationTypeDto.fromDb);
   }
 
   @Get(':notificationTypeId')
@@ -66,7 +66,7 @@ export class DappNotificationTypesController {
       },
       rejectOnNotFound: (e) => new NotFoundException(e.message),
     });
-    return NotificationTypeDto.from(notificationType);
+    return NotificationTypeDto.fromDb(notificationType);
   }
 
   @Post()
@@ -79,14 +79,15 @@ export class DappNotificationTypesController {
     const created = await this.prisma.notificationType.create({
       data: {
         name: command.name,
-        code: command.code.toLowerCase().trim(),
-        description: command.description,
+        humanReadableId: command.humanReadableId,
+        trigger: command.trigger,
+        orderingPriority: command.orderingPriority,
         enabled: command.defaultConfig.enabled,
         tags: command.tags ?? [],
         dappId: principal.dapp.id,
       },
     });
-    return NotificationTypeDto.from(created);
+    return NotificationTypeDto.fromDb(created);
   }
 
   @Patch(':notificationTypeId')
@@ -107,8 +108,13 @@ export class DappNotificationTypesController {
       },
       data: {
         ...(command.name && { name: command.name }),
-        ...(command.code && { code: command.code.toLowerCase().trim() }),
-        ...(command.description && { description: command.description }),
+        ...(command.humanReadableId && {
+          code: command.humanReadableId.toLowerCase().trim(),
+        }),
+        ...(command.trigger && { description: command.trigger }),
+        ...(command.orderingPriority && {
+          orderingPriority: command.orderingPriority,
+        }),
         ...(command?.defaultConfig?.enabled && {
           enabled: command.defaultConfig.enabled,
         }),
@@ -117,7 +123,7 @@ export class DappNotificationTypesController {
         }),
       },
     });
-    return NotificationTypeDto.from(created);
+    return NotificationTypeDto.fromDb(created);
   }
 
   @Delete(':notificationTypeId')

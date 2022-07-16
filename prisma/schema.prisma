@@ -85,10 +85,11 @@ model Dapp {
 }
 
 model NotificationType {
-  id          String @id @default(uuid()) @db.Uuid
-  name        String @map("name")
-  code        String @map("code")
-  description String @map("description")
+  id               String  @id @default(uuid()) @db.Uuid
+  humanReadableId  String  @map("human_readable_id")
+  name             String  @map("name")
+  trigger          String? @map("trigger")
+  orderingPriority Int?    @map("ordering_priority")
 
   tags String[]
 
@@ -102,7 +103,7 @@ model NotificationType {
 
   notificationSubscriptions NotificationSubscription[]
 
-  @@unique([dappId, code])
+  @@unique([dappId, humanReadableId])
   @@unique([dappId, id])
   @@map("notification_types")
 }

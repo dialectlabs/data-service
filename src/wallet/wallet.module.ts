@@ -10,6 +10,7 @@ import { DappAddressModule } from '../dapp-address/dapp-address.module';
 import { DialectModule } from '../dialect/dialect.module';
 import { WalletMessagesController } from './wallet-messages.controller';
 import { WalletNotificationSubscriptionsController } from './wallet-notification-subscriptions.controller';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { WalletNotificationSubscriptionsController } from './wallet-notification
     MailModule,
     SmsModule,
     DialectModule,
+    NotificationModule,
   ],
   controllers: [
     WalletControllerV0,

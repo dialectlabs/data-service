@@ -1,24 +1,37 @@
-import { NotificationType } from '@prisma/client';
 import { IsBoolean } from 'class-validator';
 import { WalletDto } from '../wallet/wallet.controller.v1.dto';
+import {
+  fromNotificationTypeDb,
+  NotificationConfig,
+  NotificationType,
+} from './notifications-subscriptions.service';
+import { NotificationType as NotificationTypeDB } from '@prisma/client';
 
 export class NotificationTypeDto {
   id!: string;
   name!: string;
-  code!: string;
-  description!: string;
+  humanReadableId!: string;
+  trigger?: string;
+  orderingPriority?: number;
   tags!: string[];
   defaultConfig!: NotificationConfigDto;
   dappId!: string;
+
+  static fromDb(notificationType: NotificationTypeDB) {
+    return this.from(fromNotificationTypeDb(notificationType));
+  }
 
   static from(notificationType: NotificationType): NotificationTypeDto {
     return {
       id: notificationType.id,
       name: notificationType.name,
-      code: notificationType.code,
-      description: notificationType.description,
+      humanReadableId: notificationType.humanReadableId,
+      ...(notificationType.trigger && { trigger: notificationType.trigger }),
+      ...(notificationType.orderingPriority && {
+        orderingPriority: notificationType.orderingPriority,
+      }),
       dappId: notificationType.dappId,
-      defaultConfig: NotificationConfigDto.from(notificationType),
+      defaultConfig: NotificationConfigDto.from(notificationType.defaultConfig),
       tags: notificationType.tags,
     };
   }
@@ -28,9 +41,9 @@ export class NotificationConfigDto {
   @IsBoolean()
   enabled!: boolean;
 
-  static from(configSource: NotificationConfigSource) {
+  static from(config: NotificationConfig) {
     return {
-      enabled: configSource.enabled,
+      enabled: config.enabled,
     };
   }
 }
@@ -38,15 +51,4 @@ export class NotificationConfigDto {
 export class NotificationSubscriptionDto {
   wallet!: WalletDto;
   config!: NotificationConfigDto;
-}
-
-export interface NotificationConfigSource {
-  enabled: boolean;
-}
-
-export function resolveNotificationSubscriptionConfig(
-  defaultConfig: NotificationConfigSource,
-  subscriptionConfig?: NotificationConfigSource,
-): NotificationConfigSource {
-  return subscriptionConfig ?? defaultConfig;
 }

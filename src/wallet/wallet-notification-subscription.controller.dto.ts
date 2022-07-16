@@ -2,17 +2,12 @@ import { IsOptional, IsUUID, ValidateNested } from 'class-validator';
 import { IsPublicKey } from '../middleware/public-key-validation';
 import {
   NotificationConfigDto,
-  NotificationConfigSource,
   NotificationSubscriptionDto,
   NotificationTypeDto,
-  resolveNotificationSubscriptionConfig,
 } from '../notification/notification.dto';
-import {
-  NotificationSubscription,
-  NotificationType,
-  Wallet,
-} from '@prisma/client';
+import { Wallet } from '@prisma/client';
 import { WalletDto } from './wallet.controller.v1.dto';
+import { NotificationSubscription } from '../notification/notifications-subscriptions.service';
 
 export class FindNotificationSubscriptionQueryDto {
   @IsOptional()
@@ -35,17 +30,13 @@ export class WalletNotificationSubscriptionDto {
 
   static from(
     wallet: Wallet,
-    notificationType: NotificationType,
-    notificationSubscription?: NotificationSubscription,
+    subscription: NotificationSubscription,
   ): WalletNotificationSubscriptionDto {
     return {
-      notificationType: NotificationTypeDto.from(notificationType),
+      notificationType: NotificationTypeDto.from(subscription.notificationType),
       subscription: {
         wallet: WalletDto.from(wallet),
-        config: resolveNotificationSubscriptionConfig(
-          notificationType,
-          notificationSubscription,
-        ),
+        config: NotificationConfigDto.from(subscription.config),
       },
     };
   }
