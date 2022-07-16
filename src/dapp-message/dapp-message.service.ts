@@ -4,7 +4,7 @@ import {
   MulticastMessageCommandDto,
   UnicastMessageCommandDto,
 } from './dapp-message.controller.dto';
-import { Address, Dapp, DappAddress, Wallet } from '@prisma/client';
+import { Address, Dapp, DappAddress, Prisma, Wallet } from '@prisma/client';
 import { PersistedAddressType } from '../address/address.repository';
 import { TelegramService } from '../telegram/telegram.service';
 import { MailService } from '../mail/mail.service';
@@ -17,6 +17,7 @@ import {
 import { DappPrincipal } from '../auth/authenticaiton.decorator';
 import { UnencryptedTextSerde } from '@dialectlabs/web3';
 import { DappService } from '../dapp/dapp.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 interface SendMessageCommand {
   title: string;
@@ -26,6 +27,7 @@ interface SendMessageCommand {
     address: Address & { wallet: Wallet };
   })[];
   dappPrincipal: DappPrincipal;
+  notificationTypeId?: string;
 }
 
 @Injectable()
@@ -34,6 +36,7 @@ export class DappMessageService {
   private readonly logger = new Logger(DappMessageService.name);
 
   constructor(
+    private readonly prisma: PrismaService,
     private readonly dappService: DappService,
     private readonly dappAddress: DappAddressService,
     private readonly telegram: TelegramService,
@@ -100,6 +103,21 @@ export class DappMessageService {
   }
 
   async send(command: SendMessageCommand) {
+    const dappNotificationTypes = await this.prisma.notificationType.findMany({
+      where: {
+        dappId: command.dappPrincipal.dapp.id,
+      },
+    });
+    if (dappNotificationTypes.length > 0) {
+      this.prisma.notificationSubscription.findMany({
+        where: {
+          notificationTypeId: command.notificationTypeId,
+        },
+      });
+      // TODO extract shit
+      command.receivers;
+    }
+    command.receivers;
     const title = command.title;
     const message = command.message;
     const dappNameAndTitle = `${command.dappPrincipal.dapp.name}: ${title}`;
