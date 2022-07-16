@@ -186,7 +186,7 @@ export class WalletDappAddressesControllerV1 {
         id: dappAddressId,
       },
       data: {
-        ...(command.enabled && { enabled: command.enabled }),
+        ...(command.enabled !== undefined && { enabled: command.enabled }),
       },
       include: {
         dapp: true,
