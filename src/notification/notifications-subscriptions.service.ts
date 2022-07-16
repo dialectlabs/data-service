@@ -25,7 +25,7 @@ export interface NotificationType {
   humanReadableId: string;
   name: string;
   trigger?: string | null;
-  orderingPriority?: number | null;
+  orderingPriority: number;
   tags: string[];
   defaultConfig: NotificationConfig;
   dappId: string;

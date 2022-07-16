@@ -79,7 +79,7 @@ export class DappNotificationTypesController {
     const created = await this.prisma.notificationType.create({
       data: {
         name: command.name,
-        humanReadableId: command.humanReadableId,
+        humanReadableId: command.humanReadableId.toLowerCase().trim(),
         trigger: command.trigger,
         orderingPriority: command.orderingPriority,
         enabled: command.defaultConfig.enabled,
@@ -109,10 +109,10 @@ export class DappNotificationTypesController {
       data: {
         ...(command.name && { name: command.name }),
         ...(command.humanReadableId && {
-          code: command.humanReadableId.toLowerCase().trim(),
+          humanReadableId: command.humanReadableId.toLowerCase().trim(),
         }),
-        ...(command.trigger && { description: command.trigger }),
-        ...(command.orderingPriority && {
+        ...(command.trigger && { trigger: command.trigger }),
+        ...(command.orderingPriority !== undefined && {
           orderingPriority: command.orderingPriority,
         }),
         ...(command?.defaultConfig?.enabled !== undefined && {

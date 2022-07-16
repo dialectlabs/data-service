@@ -89,7 +89,7 @@ model NotificationType {
   humanReadableId  String  @map("human_readable_id")
   name             String  @map("name")
   trigger          String? @map("trigger")
-  orderingPriority Int?    @map("ordering_priority")
+  orderingPriority Int     @default(0) @map("ordering_priority")
 
   tags String[]
 

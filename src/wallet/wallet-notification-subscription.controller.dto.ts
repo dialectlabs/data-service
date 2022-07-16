@@ -16,8 +16,6 @@ export class FindNotificationSubscriptionQueryDto {
 }
 
 export class UpsertNotificationSubscriptionCommandDto {
-  @IsPublicKey()
-  readonly dappPublicKey!: string;
   @IsUUID(4)
   readonly notificationTypeId!: string;
   @ValidateNested()

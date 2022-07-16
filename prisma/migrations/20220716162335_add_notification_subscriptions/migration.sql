@@ -4,7 +4,7 @@ CREATE TABLE "notification_types" (
     "human_readable_id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "trigger" TEXT,
-    "ordering_priority" INTEGER,
+    "ordering_priority" INTEGER NOT NULL DEFAULT 0,
     "tags" TEXT[],
     "enabled" BOOLEAN NOT NULL DEFAULT true,
     "dapp_id" UUID NOT NULL,

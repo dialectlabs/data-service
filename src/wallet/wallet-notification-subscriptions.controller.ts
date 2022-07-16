@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
 import { AuthenticationGuard } from '../auth/authentication.guard';
@@ -38,7 +38,7 @@ export class WalletNotificationSubscriptionsController {
   @Post('/notificationSubscriptions')
   async upsert(
     @AuthPrincipal() { wallet }: Principal,
-    @Query() command: UpsertNotificationSubscriptionCommandDto,
+    @Body() command: UpsertNotificationSubscriptionCommandDto,
   ): Promise<WalletNotificationSubscriptionDto> {
     const updated = await this.notificationsSubscriptionsService.upsert({
       walletId: wallet.id,
