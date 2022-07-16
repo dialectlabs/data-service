@@ -22,7 +22,7 @@ async function bootstrap() {
   // TODO: restrict with User-Agent, etc to be sure only our widget is targeting API
   app.enableCors({
     origin: '*',
-    methods: 'GET,HEAD,PUT,POST,DELETE',
+    methods: 'GET,HEAD,PUT,POST,DELETE,PATCH',
   });
   app.setGlobalPrefix('api', {
     exclude: [
