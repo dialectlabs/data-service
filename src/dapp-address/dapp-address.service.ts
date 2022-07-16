@@ -20,7 +20,7 @@ export class DappAddressService {
     const findDappQuery = query.dapp;
     return this.prisma.dappAddress.findMany({
       where: {
-        ...(query.enabled && { enabled: query.enabled }),
+        ...(query.enabled !== undefined && { enabled: query.enabled }),
         ...(findAddressQuery && {
           address: {
             ...(findAddressQuery.ids && {
