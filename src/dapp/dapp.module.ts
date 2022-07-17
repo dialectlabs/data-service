@@ -10,6 +10,8 @@ import { TelegramModule } from '../telegram/telegram.module';
 import { DappAddressModule } from '../dapp-address/dapp-address.module';
 import { DappAddressesControllerV1 } from './dapp-addresses.controller.v1';
 import { DappNotificationTypesController } from './dapp-notification-types.controller';
+import { NotificationModule } from '../notification/notification.module';
+import { DappNotificationSubscriptionsController } from './dapp-notification-subscriptions.controller';
 
 @Module({
   imports: [
@@ -18,6 +20,7 @@ import { DappNotificationTypesController } from './dapp-notification-types.contr
     SmsModule,
     TelegramModule,
     DappAddressModule,
+    NotificationModule,
   ],
   providers: [DappService],
   exports: [DappService],
@@ -26,6 +29,7 @@ import { DappNotificationTypesController } from './dapp-notification-types.contr
     DappAddressesControllerV1,
     DappController,
     DappNotificationTypesController,
+    DappNotificationSubscriptionsController,
   ],
 })
 export class DappModule {}

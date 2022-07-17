@@ -171,7 +171,7 @@ export class DappMessageService {
     return command.receivers.filter(({ address: { wallet } }) =>
       notificationSubscriptions.find(
         (it) =>
-          it.walletId === wallet.id &&
+          it.wallet.id === wallet.id &&
           it.notificationType.id === command.notificationTypeId &&
           it.config.enabled,
       ),

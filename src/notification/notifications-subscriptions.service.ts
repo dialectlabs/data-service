@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { NotificationType as NotificationTypeDb } from '@prisma/client';
+import { NotificationType as NotificationTypeDb, Wallet } from '@prisma/client';
+import { DappAddressService } from '../dapp-address/dapp-address.service';
 
 export interface FindNotificationSubscriptionQuery {
-  walletIds: string[];
-  dappPublicKey?: string;
+  walletIds?: string[];
+  dappPublicKey: string;
   notificationTypeId?: string;
 }
 
@@ -15,7 +16,7 @@ export interface UpsertNotificationSubscriptionCommand {
 }
 
 export interface NotificationSubscription {
-  walletId: string;
+  wallet: Wallet;
   notificationType: NotificationType;
   config: NotificationConfig;
 }
@@ -41,7 +42,10 @@ export interface NotificationConfig {
 
 @Injectable()
 export class NotificationsSubscriptionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly dappAddressService: DappAddressService,
+  ) {}
 
   async findAll(
     query: FindNotificationSubscriptionQuery,
@@ -67,9 +71,11 @@ export class NotificationsSubscriptionsService {
     const notificationSubscriptions =
       await this.prisma.notificationSubscription.findMany({
         where: {
-          walletId: {
-            in: query.walletIds,
-          },
+          ...(query.walletIds && {
+            walletId: {
+              in: query.walletIds,
+            },
+          }),
           notificationTypeId: {
             in: notificationTypes.map(({ id }) => id),
           },
@@ -86,15 +92,27 @@ export class NotificationsSubscriptionsService {
         ]),
       );
 
+    const wallets = query.walletIds
+      ? await this.prisma.wallet.findMany({
+          where: { id: { in: query.walletIds } },
+        })
+      : (
+          await this.dappAddressService.findAll({
+            dapp: {
+              publicKey: query.dappPublicKey,
+            },
+          })
+        ).map((it) => it.address.wallet);
+
     return notificationTypes.flatMap((notificationTypeDb) =>
-      query.walletIds.map((walletId) => {
+      wallets.map((wallet) => {
         const notificationType = fromNotificationTypeDb(notificationTypeDb);
         const notificationSubscription =
           notificationTypeIdWalletIdToNotificationSubscription[
-            `${notificationType.id}_${walletId}`
+            `${notificationType.id}_${wallet.id}`
           ];
         return {
-          walletId,
+          wallet,
           notificationType,
           config: notificationSubscription
             ? toConfig(notificationSubscription)
@@ -124,11 +142,12 @@ export class NotificationsSubscriptionsService {
       },
       include: {
         notificationType: true,
+        wallet: true,
       },
     });
 
     return {
-      walletId: command.walletId,
+      wallet: updated.wallet,
       notificationType: fromNotificationTypeDb(updated.notificationType),
       config: toConfig(updated),
     };

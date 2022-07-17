@@ -1,4 +1,4 @@
-import { IsOptional, IsUUID, ValidateNested } from 'class-validator';
+import { IsUUID, ValidateNested } from 'class-validator';
 import { IsPublicKey } from '../middleware/public-key-validation';
 import {
   NotificationConfigDto,
@@ -10,9 +10,8 @@ import { WalletDto } from './wallet.controller.v1.dto';
 import { NotificationSubscription } from '../notification/notifications-subscriptions.service';
 
 export class FindNotificationSubscriptionQueryDto {
-  @IsOptional()
   @IsPublicKey()
-  readonly dappPublicKey?: string;
+  readonly dappPublicKey!: string;
 }
 
 export class UpsertNotificationSubscriptionCommandDto {
