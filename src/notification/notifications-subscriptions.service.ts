@@ -83,22 +83,28 @@ export class NotificationsSubscriptionsService {
         ]),
       );
 
-    return notificationTypes.flatMap((notificationTypeDb) =>
-      query.walletIds.map((walletId) => {
-        const notificationType = fromNotificationTypeDb(notificationTypeDb);
-        const notificationSubscription =
-          notificationTypeIdWalletIdToNotificationSubscription[
-            `${notificationType.id}_${walletId}`
-          ];
-        return {
-          walletId,
-          notificationType,
-          config: notificationSubscription
-            ? toConfig(notificationSubscription)
-            : notificationType.defaultConfig,
-        };
-      }),
-    );
+    return notificationTypes
+      .flatMap((notificationTypeDb) =>
+        query.walletIds.map((walletId) => {
+          const notificationType = fromNotificationTypeDb(notificationTypeDb);
+          const notificationSubscription =
+            notificationTypeIdWalletIdToNotificationSubscription[
+              `${notificationType.id}_${walletId}`
+            ];
+          return {
+            walletId,
+            notificationType,
+            config: notificationSubscription
+              ? toConfig(notificationSubscription)
+              : notificationType.defaultConfig,
+          };
+        }),
+      )
+      .sort(
+        (a, b) =>
+          b.notificationType.orderingPriority -
+          a.notificationType.orderingPriority,
+      );
   }
 
   async upsert(
