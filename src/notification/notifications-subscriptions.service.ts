@@ -60,6 +60,9 @@ export class NotificationsSubscriptionsService {
       include: {
         dapp: true,
       },
+      orderBy: {
+        orderingPriority: 'desc',
+      },
     });
     const notificationSubscriptions =
       await this.prisma.notificationSubscription.findMany({
@@ -83,28 +86,22 @@ export class NotificationsSubscriptionsService {
         ]),
       );
 
-    return notificationTypes
-      .flatMap((notificationTypeDb) =>
-        query.walletIds.map((walletId) => {
-          const notificationType = fromNotificationTypeDb(notificationTypeDb);
-          const notificationSubscription =
-            notificationTypeIdWalletIdToNotificationSubscription[
-              `${notificationType.id}_${walletId}`
-            ];
-          return {
-            walletId,
-            notificationType,
-            config: notificationSubscription
-              ? toConfig(notificationSubscription)
-              : notificationType.defaultConfig,
-          };
-        }),
-      )
-      .sort(
-        (a, b) =>
-          b.notificationType.orderingPriority -
-          a.notificationType.orderingPriority,
-      );
+    return notificationTypes.flatMap((notificationTypeDb) =>
+      query.walletIds.map((walletId) => {
+        const notificationType = fromNotificationTypeDb(notificationTypeDb);
+        const notificationSubscription =
+          notificationTypeIdWalletIdToNotificationSubscription[
+            `${notificationType.id}_${walletId}`
+          ];
+        return {
+          walletId,
+          notificationType,
+          config: notificationSubscription
+            ? toConfig(notificationSubscription)
+            : notificationType.defaultConfig,
+        };
+      }),
+    );
   }
 
   async upsert(
