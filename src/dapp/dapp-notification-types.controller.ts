@@ -25,6 +25,7 @@ import {
   NotificationTypeResourceId,
   PatchNotificationTypeCommandDto,
 } from './dapp-notification-types.controller.dto';
+import { NotificationType } from '../notification/model';
 
 @ApiTags('Dapp notification types')
 @Controller({
@@ -47,7 +48,9 @@ export class DappNotificationTypesController {
         dappId: principal.dapp.id,
       },
     });
-    return notificationTypes.map(NotificationTypeDto.fromDb);
+    return notificationTypes.map((it) =>
+      NotificationTypeDto.from(NotificationType.fromNotificationTypeDb(it)),
+    );
   }
 
   @Get(':notificationTypeId')
@@ -57,7 +60,7 @@ export class DappNotificationTypesController {
     @Param() { notificationTypeId }: NotificationTypeResourceId,
   ): Promise<NotificationTypeDto> {
     checkPrincipalAuthorizedToUseDapp(principal, dappPublicKey);
-    const notificationType = await this.prisma.notificationType.findUnique({
+    const found = await this.prisma.notificationType.findUnique({
       where: {
         dappId_id: {
           dappId: principal.dapp.id,
@@ -66,7 +69,9 @@ export class DappNotificationTypesController {
       },
       rejectOnNotFound: (e) => new NotFoundException(e.message),
     });
-    return NotificationTypeDto.fromDb(notificationType);
+    return NotificationTypeDto.from(
+      NotificationType.fromNotificationTypeDb(found),
+    );
   }
 
   @Post()
@@ -87,7 +92,9 @@ export class DappNotificationTypesController {
         dappId: principal.dapp.id,
       },
     });
-    return NotificationTypeDto.fromDb(created);
+    return NotificationTypeDto.from(
+      NotificationType.fromNotificationTypeDb(created),
+    );
   }
 
   @Patch(':notificationTypeId')
@@ -99,7 +106,7 @@ export class DappNotificationTypesController {
   ): Promise<NotificationTypeDto> {
     checkPrincipalAuthorizedToUseDapp(principal, dappPublicKey);
     await this.findOne(principal, { dappPublicKey }, { notificationTypeId });
-    const created = await this.prisma.notificationType.update({
+    const patched = await this.prisma.notificationType.update({
       where: {
         dappId_id: {
           dappId: principal.dapp.id,
@@ -123,7 +130,9 @@ export class DappNotificationTypesController {
         }),
       },
     });
-    return NotificationTypeDto.fromDb(created);
+    return NotificationTypeDto.from(
+      NotificationType.fromNotificationTypeDb(patched),
+    );
   }
 
   @Delete(':notificationTypeId')

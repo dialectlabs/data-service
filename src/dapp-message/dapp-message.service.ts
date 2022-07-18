@@ -17,10 +17,8 @@ import {
 import { DappPrincipal } from '../auth/authenticaiton.decorator';
 import { UnencryptedTextSerde } from '@dialectlabs/web3';
 import { DappService } from '../dapp/dapp.service';
-import {
-  NotificationsSubscriptionsService,
-  NotificationSubscription,
-} from '../notification/notifications-subscriptions.service';
+import { NotificationsSubscriptionsService } from '../notification/notifications-subscriptions.service';
+import { NotificationSubscription } from '../notification/model';
 
 interface SendMessageCommand {
   title: string;

@@ -7,7 +7,7 @@ import {
 } from '../notification/notification.dto';
 import { Wallet } from '@prisma/client';
 import { WalletDto } from './wallet.controller.v1.dto';
-import { NotificationSubscription } from '../notification/notifications-subscriptions.service';
+import { NotificationSubscription } from '../notification/model';
 
 export class FindNotificationSubscriptionQueryDto {
   @IsPublicKey()

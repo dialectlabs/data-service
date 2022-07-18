@@ -7,7 +7,7 @@ import { WalletDto } from '../wallet/wallet.controller.v1.dto';
 import {
   NotificationSubscription,
   NotificationType,
-} from '../notification/notifications-subscriptions.service';
+} from '../notification/model';
 
 export class DappNotificationSubscriptionDto {
   notificationType!: NotificationTypeDto;

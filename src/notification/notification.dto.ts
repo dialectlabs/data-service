@@ -1,12 +1,7 @@
 import { IsBoolean } from 'class-validator';
 import { WalletDto } from '../wallet/wallet.controller.v1.dto';
-import {
-  fromNotificationTypeDb,
-  NotificationConfig,
-  NotificationType,
-} from './notifications-subscriptions.service';
-import { NotificationType as NotificationTypeDB } from '@prisma/client';
 import { Transform } from 'class-transformer';
+import { NotificationConfig, NotificationType } from './model';
 
 export class NotificationTypeDto {
   id!: string;
@@ -17,10 +12,6 @@ export class NotificationTypeDto {
   tags!: string[];
   defaultConfig!: NotificationConfigDto;
   dappId!: string;
-
-  static fromDb(notificationType: NotificationTypeDB) {
-    return NotificationTypeDto.from(fromNotificationTypeDb(notificationType));
-  }
 
   static from(notificationType: NotificationType): NotificationTypeDto {
     return {

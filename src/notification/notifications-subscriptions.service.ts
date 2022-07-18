@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { NotificationType as NotificationTypeDb, Wallet } from '@prisma/client';
 import { DappAddressService } from '../dapp-address/dapp-address.service';
+import {
+  NotificationConfig,
+  NotificationSubscription,
+  NotificationType,
+} from './model';
+import { NotificationsTypesService } from './notifications-types.service';
 
 export interface FindNotificationSubscriptionQuery {
   walletIds?: string[];
@@ -15,111 +20,92 @@ export interface UpsertNotificationSubscriptionCommand {
   config: NotificationConfig;
 }
 
-export interface NotificationSubscription {
-  wallet: Wallet;
-  notificationType: NotificationType;
-  config: NotificationConfig;
-}
-
-export interface NotificationType {
-  id: string;
-  humanReadableId: string;
-  name: string;
-  trigger?: string | null;
-  orderingPriority: number;
-  tags: string[];
-  defaultConfig: NotificationConfig;
-  dappId: string;
-}
-
-export interface NotificationConfigSource {
-  enabled: boolean;
-}
-
-export interface NotificationConfig {
-  enabled: boolean;
-}
-
 @Injectable()
 export class NotificationsSubscriptionsService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly notificationsTypesService: NotificationsTypesService,
     private readonly dappAddressService: DappAddressService,
   ) {}
 
   async findAll(
     query: FindNotificationSubscriptionQuery,
   ): Promise<NotificationSubscription[]> {
-    const notificationTypes = await this.prisma.notificationType.findMany({
-      where: {
-        ...(query.notificationTypeId && {
-          id: query.notificationTypeId,
-        }),
-        ...(query.dappPublicKey && {
-          dapp: {
-            publicKey: query.dappPublicKey,
-          },
-        }),
-      },
-      include: {
-        dapp: true,
-      },
-      orderBy: {
-        orderingPriority: 'desc',
-      },
+    const notificationTypes = await this.notificationsTypesService.findAll({
+      dappPublicKey: query.dappPublicKey,
+      notificationTypeId: query.notificationTypeId,
+      walletIds: query.walletIds,
     });
     const notificationSubscriptions =
-      await this.prisma.notificationSubscription.findMany({
-        where: {
-          ...(query.walletIds && {
-            walletId: {
-              in: query.walletIds,
-            },
-          }),
-          notificationTypeId: {
-            in: notificationTypes.map(({ id }) => id),
-          },
-        },
-        include: {
-          wallet: true,
-        },
-      });
+      await this.getPersistedNotificationSubscriptions(
+        query,
+        notificationTypes,
+      );
+    const subscriberWallets = await this.getSubscriberWallets(query);
     const notificationTypeIdWalletIdToNotificationSubscription =
       Object.fromEntries(
         notificationSubscriptions.map((it) => [
-          `${it.notificationTypeId}_${it.walletId}`,
+          createSubscriberNotificationTypeIdKey(
+            it.notificationTypeId,
+            it.walletId,
+          ),
           it,
         ]),
       );
-
-    const wallets = query.walletIds
-      ? await this.prisma.wallet.findMany({
-          where: { id: { in: query.walletIds } },
-        })
-      : (
-          await this.dappAddressService.findAll({
-            dapp: {
-              publicKey: query.dappPublicKey,
-            },
-          })
-        ).map((it) => it.address.wallet);
-
-    return notificationTypes.flatMap((notificationTypeDb) =>
-      wallets.map((wallet) => {
-        const notificationType = fromNotificationTypeDb(notificationTypeDb);
+    return notificationTypes.flatMap((notificationType) =>
+      subscriberWallets.map((wallet) => {
         const notificationSubscription =
           notificationTypeIdWalletIdToNotificationSubscription[
-            `${notificationType.id}_${wallet.id}`
+            createSubscriberNotificationTypeIdKey(
+              notificationType.id,
+              wallet.id,
+            )
           ];
         return {
           wallet,
           notificationType,
           config: notificationSubscription
-            ? toConfig(notificationSubscription)
+            ? NotificationConfig.fromConfigSourceDb(notificationSubscription)
             : notificationType.defaultConfig,
         };
       }),
     );
+  }
+
+  private getSubscriberWallets(query: FindNotificationSubscriptionQuery) {
+    if (query.walletIds) {
+      return this.prisma.wallet.findMany({
+        where: { id: { in: query.walletIds } },
+      });
+    }
+    return this.dappAddressService
+      .findAll({
+        dapp: {
+          publicKey: query.dappPublicKey,
+        },
+      })
+      .then((dappAddresses) => dappAddresses.map((it) => it.address.wallet));
+  }
+
+  private getPersistedNotificationSubscriptions(
+    query: FindNotificationSubscriptionQuery,
+    notificationTypes: NotificationType[],
+  ) {
+    return this.prisma.notificationSubscription.findMany({
+      where: {
+        ...(query.walletIds && {
+          walletId: {
+            in: query.walletIds,
+          },
+        }),
+        notificationTypeId: {
+          in: notificationTypes.map(({ id }) => id),
+        },
+      },
+      include: {
+        wallet: true,
+      },
+    });
   }
 
   async upsert(
@@ -148,24 +134,17 @@ export class NotificationsSubscriptionsService {
 
     return {
       wallet: updated.wallet,
-      notificationType: fromNotificationTypeDb(updated.notificationType),
-      config: toConfig(updated),
+      notificationType: NotificationType.fromNotificationTypeDb(
+        updated.notificationType,
+      ),
+      config: NotificationConfig.fromConfigSourceDb(updated),
     };
   }
 }
 
-export function fromNotificationTypeDb(
-  notificationType: NotificationTypeDb,
-): NotificationType {
-  const defaultConfig = toConfig(notificationType);
-  return {
-    ...notificationType,
-    defaultConfig,
-  };
-}
-
-function toConfig(source: NotificationConfigSource): NotificationConfig {
-  return {
-    enabled: source.enabled,
-  };
+function createSubscriberNotificationTypeIdKey(
+  notificationTypeId: string,
+  walletId: string,
+) {
+  return `${notificationTypeId}_${walletId}`;
 }
