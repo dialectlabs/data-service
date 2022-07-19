@@ -99,6 +99,59 @@ async function seedDev() {
     update: {},
   });
 
+  // at
+  const atWallet = await prisma.wallet.upsert({
+    where: {
+      publicKey: '6MKeaLnTnhXM6Qo8gHEgbeqeoUqbg4Re4FL5UHXMjetJ',
+    },
+    create: {
+      publicKey: '6MKeaLnTnhXM6Qo8gHEgbeqeoUqbg4Re4FL5UHXMjetJ',
+    },
+    update: {},
+  });
+  const atDapp = await prisma.dapp.upsert({
+    where: {
+      publicKey: '5SVmPJUGtthMZNB77NggkanUd9f1NkLzeaDbabWFmdjV',
+    },
+    create: {
+      name: 'at-dapp',
+      publicKey: '5SVmPJUGtthMZNB77NggkanUd9f1NkLzeaDbabWFmdjV',
+    },
+    update: {},
+  });
+
+  await prisma.notificationType.upsert({
+    where: {
+      dappId_id: {
+        dappId: atDapp.id,
+        id: '987b5120-be02-40a6-b50c-951575a1118e',
+      },
+    },
+    create: {
+      dappId: atDapp.id,
+      id: '987b5120-be02-40a6-b50c-951575a1118e',
+      name: 'at dapp test notification type',
+      humanReadableId: 'at-dapp-test-notification',
+    },
+    update: {},
+  });
+
+  await prisma.notificationType.upsert({
+    where: {
+      dappId_id: {
+        dappId: atDapp.id,
+        id: '887b5120-be02-40a6-b50c-951575a1118e',
+      },
+    },
+    create: {
+      dappId: atDapp.id,
+      id: '887b5120-be02-40a6-b50c-951575a1118e',
+      name: 'at dapp test notification type 2',
+      humanReadableId: 'at-dapp-test-notification 2',
+    },
+    update: {},
+  });
+
   return;
 }
 
