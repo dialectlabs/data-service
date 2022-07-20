@@ -3,11 +3,11 @@ import { Wallet } from '@prisma/client';
 export class WalletDto {
   readonly id!: string;
   readonly publicKey!: string;
-}
 
-export function toWalletDto(wallet: Wallet): WalletDto {
-  return {
-    id: wallet.id,
-    publicKey: wallet.publicKey,
-  };
+  static from(wallet: Wallet) {
+    return {
+      id: wallet.id,
+      publicKey: wallet.publicKey,
+    };
+  }
 }

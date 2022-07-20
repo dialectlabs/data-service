@@ -5,7 +5,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { SubscriberDto } from './dapp.controller.v0.dto';
+import { SubscriberDto } from './dapp-addresses.controller.v0.dto';
 import _ from 'lodash';
 import { PublicKeyValidationPipe } from '../middleware/public-key-validation';
 import { AuthenticationGuard } from '../auth/authentication.guard';
@@ -24,7 +24,7 @@ import { checkPrincipalAuthorizedToUseDapp } from './dapp.service';
 @UseGuards(AuthenticationGuard, DappAuthenticationGuard)
 @ApiBearerAuth()
 @ApiBasicAuth()
-export class DappControllerV0 {
+export class DappAddressesControllerV0 {
   constructor(private readonly dappAddressService: DappAddressService) {}
 
   /**

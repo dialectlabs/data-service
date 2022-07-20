@@ -3,7 +3,7 @@ import { Address, Dapp, DappAddress, Wallet } from '@prisma/client';
 import { extractTelegramChatId } from './dapp-address.service';
 import { IsPublicKey } from '../middleware/public-key-validation';
 import { IsBoolean, IsOptional, IsUUID } from 'class-validator';
-import { DappDto } from '../dapp/dapp.controller.v1.dto';
+import { DappDto } from '../dapp/dapp.controller.dto';
 
 export class DappAddressDto {
   readonly id!: string;

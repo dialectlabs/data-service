@@ -1,4 +1,4 @@
-import { toWalletDto, WalletDto } from '../wallet/wallet.controller.v1.dto';
+import { WalletDto } from '../wallet/wallet.controller.v1.dto';
 import { Address, Wallet } from '@prisma/client';
 import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 import { IllegalStateError } from '@dialectlabs/sdk';
@@ -18,7 +18,7 @@ export class AddressDto {
       value: address.value,
       type: toAddressTypeDto(address.type as PersistedAddressType),
       verified: address.verified,
-      wallet: toWalletDto(wallet),
+      wallet: WalletDto.from(wallet),
     };
   }
 }

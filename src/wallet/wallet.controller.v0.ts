@@ -14,18 +14,23 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import {ApiBearerAuth, ApiOperation, ApiTags} from '@nestjs/swagger';
-import {PrismaService} from '../prisma/prisma.service';
-import {DappAddressDto, PostDappAddressDto, PutDappAddressDto, VerifyAddressDto,} from './wallet.controller.v0.dto';
-import {AuthenticationGuard} from '../auth/authentication.guard';
-import {MailService} from '../mail/mail.service';
-import {generateVerificationCode} from 'src/utils';
-import {SmsService} from 'src/sms/sms.service';
-import {PublicKeyValidationPipe} from '../middleware/public-key-validation';
-import {AuthPrincipal, Principal} from '../auth/authenticaiton.decorator';
-import {IllegalStateError} from '@dialectlabs/sdk';
-import {PublicKey} from '@solana/web3.js';
-import {BN} from 'bn.js';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { PrismaService } from '../prisma/prisma.service';
+import {
+  DappAddressDto,
+  PostDappAddressDto,
+  PutDappAddressDto,
+  VerifyAddressDto,
+} from './wallet.controller.v0.dto';
+import { AuthenticationGuard } from '../auth/authentication.guard';
+import { MailService } from '../mail/mail.service';
+import { generateVerificationCode } from 'src/utils';
+import { SmsService } from 'src/sms/sms.service';
+import { PublicKeyValidationPipe } from '../middleware/public-key-validation';
+import { AuthPrincipal, Principal } from '../auth/authenticaiton.decorator';
+import { IllegalStateError } from '@dialectlabs/sdk';
+import { PublicKey } from '@solana/web3.js';
+import { BN } from 'bn.js';
 
 @ApiTags('Wallets')
 @Controller({

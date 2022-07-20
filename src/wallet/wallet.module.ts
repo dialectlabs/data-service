@@ -9,6 +9,8 @@ import { AddressModule } from '../address/address.module';
 import { DappAddressModule } from '../dapp-address/dapp-address.module';
 import { DialectModule } from '../dialect/dialect.module';
 import { WalletMessagesController } from './wallet-messages.controller';
+import { WalletNotificationSubscriptionsController } from './wallet-notification-subscriptions.controller';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
@@ -18,12 +20,14 @@ import { WalletMessagesController } from './wallet-messages.controller';
     MailModule,
     SmsModule,
     DialectModule,
+    NotificationModule,
   ],
   controllers: [
     WalletControllerV0,
     WalletAddressesControllerV1,
     WalletDappAddressesControllerV1,
     WalletMessagesController,
+    WalletNotificationSubscriptionsController,
   ],
 })
 export class WalletModule {}

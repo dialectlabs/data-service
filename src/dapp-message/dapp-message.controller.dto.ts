@@ -1,4 +1,10 @@
-import { ArrayNotEmpty, IsArray, IsString } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { IsPublicKey } from '../middleware/public-key-validation';
 
 export class UnicastMessageCommandDto {
@@ -8,6 +14,9 @@ export class UnicastMessageCommandDto {
   message!: string;
   @IsPublicKey()
   recipientPublicKey!: string;
+  @IsUUID()
+  @IsOptional()
+  notificationTypeId?: string;
 }
 
 export class MulticastMessageCommandDto {
@@ -19,6 +28,9 @@ export class MulticastMessageCommandDto {
   @ArrayNotEmpty()
   @IsPublicKey({ each: true })
   recipientPublicKeys!: string[];
+  @IsUUID()
+  @IsOptional()
+  notificationTypeId?: string;
 }
 
 export class BroadcastMessageCommandDto {
@@ -26,6 +38,9 @@ export class BroadcastMessageCommandDto {
   title!: string;
   @IsString()
   message!: string;
+  @IsUUID()
+  @IsOptional()
+  notificationTypeId?: string;
 }
 
 export class DappResourceId {
