@@ -1,4 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import {
   BroadcastMessageCommandDto,
   MulticastMessageCommandDto,
@@ -18,7 +22,7 @@ import { DappPrincipal } from '../auth/authenticaiton.decorator';
 import { UnencryptedTextSerde } from '@dialectlabs/web3';
 import { DappService } from '../dapp/dapp.service';
 import { NotificationsSubscriptionsService } from '../notification/notifications-subscriptions.service';
-import { NotificationSubscription } from '../notification/model';
+import { NotificationsTypesService } from '../notification/notifications-types.service';
 
 interface SendMessageCommand {
   title: string;
@@ -44,6 +48,7 @@ export class DappMessageService {
     private readonly sms: SmsService,
     private readonly dialect: DialectService,
     private readonly notificationsSubscriptionsService: NotificationsSubscriptionsService,
+    private readonly notificationsTypesService: NotificationsTypesService,
   ) {}
 
   async unicast(command: UnicastMessageCommandDto, dapp: DappPrincipal) {
@@ -104,13 +109,12 @@ export class DappMessageService {
   }
 
   async send(command: SendMessageCommand) {
-    await this.getReceivers(command);
-    command.receivers;
+    const receivers = await this.getReceivers(command);
     const title = command.title;
     const message = command.message;
     const dappNameAndTitle = `${command.dappPrincipal.dapp.name}: ${title}`;
     const allSettled = Promise.allSettled(
-      command.receivers.map(async (da) => {
+      receivers.map(async (da) => {
         switch (da.address.type as PersistedAddressType) {
           case 'telegram':
             const telegramChatId = extractTelegramChatId(da);
@@ -157,15 +161,24 @@ export class DappMessageService {
   }
 
   private async getReceivers(command: SendMessageCommand) {
+    const dappPublicKey = command.dappPrincipal.dapp.publicKey;
+    const dappNotificationTypes = await this.notificationsTypesService.findAll({
+      dappPublicKey,
+    });
+    if (dappNotificationTypes.length === 0) {
+      return command.receivers;
+    }
+    if (dappNotificationTypes.length > 0 && !command.notificationTypeId) {
+      throw new UnprocessableEntityException(
+        `Dapp ${dappPublicKey} has non-empty notification type configuration, therefore notification type should be supplied`,
+      );
+    }
     const notificationSubscriptions =
       await this.notificationsSubscriptionsService.findAll({
         notificationTypeId: command.notificationTypeId,
         dappPublicKey: command.dappPrincipal.dapp.publicKey,
         walletIds: command.receivers.map((it) => it.address.wallet.id),
       });
-    if (dappHasNoNotificationTypesInDb(notificationSubscriptions)) {
-      return command.receivers;
-    }
     return command.receivers.filter(({ address: { wallet } }) =>
       notificationSubscriptions.find(
         (it) =>
@@ -175,11 +188,4 @@ export class DappMessageService {
       ),
     );
   }
-}
-
-// backward compatibility for old dapps
-function dappHasNoNotificationTypesInDb(
-  notificationSubscriptions: NotificationSubscription[],
-) {
-  return notificationSubscriptions.length === 0;
 }
