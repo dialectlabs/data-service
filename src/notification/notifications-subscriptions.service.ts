@@ -7,6 +7,7 @@ import {
   NotificationType,
 } from './model';
 import { NotificationsTypesService } from './notifications-types.service';
+import _ from 'lodash';
 
 export interface FindNotificationSubscriptionQuery {
   walletIds?: string[];
@@ -72,19 +73,21 @@ export class NotificationsSubscriptionsService {
     );
   }
 
-  private getSubscriberWallets(query: FindNotificationSubscriptionQuery) {
+  private async getSubscriberWallets(query: FindNotificationSubscriptionQuery) {
     if (query.walletIds) {
       return this.prisma.wallet.findMany({
         where: { id: { in: query.walletIds } },
       });
     }
-    return this.dappAddressService
-      .findAll({
-        dapp: {
-          publicKey: query.dappPublicKey,
-        },
-      })
-      .then((dappAddresses) => dappAddresses.map((it) => it.address.wallet));
+    const dappAddresses = await this.dappAddressService.findAll({
+      dapp: {
+        publicKey: query.dappPublicKey,
+      },
+    });
+    return _.uniqBy(
+      dappAddresses.map((it) => it.address.wallet),
+      (it) => it.id,
+    );
   }
 
   private getPersistedNotificationSubscriptions(
